@@ -11,15 +11,15 @@
 ## 其它数据库
 - [FusionDB](https://www.fusionlab.cn/zh-cn/fdb/index.html)
 
-## 性能比对
-- 新浪： 
-  - 300亿数据
-  - count  0.9s
-  - 时间 group by count/100000000  limit 10  9s
+## 文档
+- [介绍](docs/clickhouse_introduction.md)
+- [部署环境要求](docs/clickhouse_started.md)
+- [客户端](docs/clickhouse_clients.md)
+- [数据类型](docs/clickhouse_datatype.md)
+- [数据库引擎](docs/clickhouse_database_engines.md)
+- [表引擎](docs/clickhouse_table_engines)
+- [SQL指南](docs/clickhouse_query_language.md)
+- [运维](docs/clickhouse_operations.md)
+- [指导](docs/clickhouse_guide.md)
+- [开发者指南](docs/clickhouse_development.md)
 
-## 优劣势
-clickhouse
-- \1. 不支持事务
-- \2. 不支持update/Delete操作
-- \3. 支持有限操作系统
-- \4.  ClickHouse 比 Vertica InfiniDB MonetDB Infobright Hive MySQL MemSQL Greenplum 大部分场景要快，个别场景比某些差点
