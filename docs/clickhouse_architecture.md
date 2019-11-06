@@ -283,6 +283,14 @@ ClickHouse 具有强类型，因此隐式类型转换不会发生。如果函数
 - ClickHouse 集群由独立的分片组成，每一个分片由多个副本组成。
   - 集群不是弹性的，因此在添加新的分片后，数据不会自动在分片之间重新平衡(集群负载不均衡)。
   - 我们应该实现一个表引擎，使得该引擎能够跨集群扩展数据，同时具有动态复制的`regions`，这些`regions`能够在集群之间自动拆分和平衡。
+  
+ 
+## 架构
 
+- [table query](../images/Clickhouse-Storage:Query.jpg)
+
+- [table server](../images/ClickHouse-server.jpg)
+
+- [table cluster](../images/ClickHouse-cluster.jpg)
 
 

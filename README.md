@@ -22,8 +22,8 @@
   - [syntax](docs/query_language/clickhouse_query_language_syntax.md)
   - [statements](docs/query_language/clickhouse_query_language_statements.md)
   - [functions](docs/query_language/clickhouse_query_language_functions.md)
+- [架构](docs/clickhouse_architecture.md)
 - [运维](docs/clickhouse_operations.md)
 - [指导](docs/clickhouse_guides.md)
-- [架构](docs/clickhouse_architecture.md)
 - [Future](docs/clickhouse_roadmap.md)
 
