@@ -311,8 +311,8 @@ CapnProto                       ✔	✗
 
 - `Server`
 
-- ![server](../images/ClickHouse-server.jpg)
+![server](../images/ClickHouse-server.jpg)
 
 - `Cluster`
 
-- ![cluster](../images/ClickHouse-cluster.jpg)
+![cluster](../images/ClickHouse-cluster.jpg)

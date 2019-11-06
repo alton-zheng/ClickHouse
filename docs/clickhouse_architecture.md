@@ -293,10 +293,10 @@ ClickHouse 具有强类型，因此隐式类型转换不会发生。如果函数
 
 - `Server`
 
-- ![server](../images/ClickHouse-server.jpg)
+![server](../images/ClickHouse-server.jpg)
 
 - `Cluster`
 
-- ![cluster](../images/ClickHouse-cluster.jpg)
+![cluster](../images/ClickHouse-cluster.jpg)
 
 
