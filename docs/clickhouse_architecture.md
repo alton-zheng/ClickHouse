@@ -287,10 +287,10 @@ ClickHouse 具有强类型，因此隐式类型转换不会发生。如果函数
  
 ## 架构
 
-- [table query](../images/Clickhouse-Storage:Query.jpg)
+- ![table query](../images/Clickhouse-Storage:Query.jpg)
 
-- [table server](../images/ClickHouse-server.jpg)
+- ![table server](../images/ClickHouse-server.jpg)
 
-- [table cluster](../images/ClickHouse-cluster.jpg)
+- ![table cluster](../images/ClickHouse-cluster.jpg)
 
 

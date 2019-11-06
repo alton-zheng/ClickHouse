@@ -305,8 +305,8 @@ CapnProto                       ✔	✗
 
 ## 架构
 
-- [table query](../images/Clickhouse-Storage:Query.jpg)
+- ![table query](../images/Clickhouse-Storage:Query.jpg)
 
-- [table server](../images/ClickHouse-server.jpg)
+- ![table server](../images/ClickHouse-server.jpg)
 
-- [table cluster](../images/ClickHouse-cluster.jpg)
+- ![table cluster](../images/ClickHouse-cluster.jpg)
