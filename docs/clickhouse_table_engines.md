@@ -1,132 +1,126 @@
-## 表引擎[¶](https://clickhouse.yandex/docs/zh/single/#biao-yin-qing "Permanent link")
+## `Table engines`
 
-表引擎（即表的类型）决定了：
+`table engines`（即表的类型）决定了：
 
 - 数据的存储方式和位置，写到哪里以及从哪里读取数据
-- 支持哪些查询以及如何支持。
+- 支持哪些`Query`以及如何支持。
 - 并发数据访问。
 - 索引的使用（如果存在）。
 - 是否可以执行多线程请求。
-- 数据复制参数。
+- `Data replication`参数。
 
-## 引擎类型[¶](https://clickhouse.yandex/docs/zh/single/#yin-qing-lei-xing "Permanent link")
+## Engine Families
 
-### MergeTree[¶](https://clickhouse.yandex/docs/zh/single/#mergetree "Permanent link")
+### MergeTree
 
-适用于高负载任务的最通用和功能最强大的表引擎。这些引擎的共同特点是可以快速插入数据并进行后续的后台数据处理。 MergeTree 系列引擎支持数据复制（使用[Replicated\*](https://clickhouse.yandex/docs/en/operations/table_engines/replication/)  的引擎版本），分区和一些其他引擎不支持的其他功能。
+适用于高负载任务的最通用和功能最强大的`table engines`。这些引擎的共同特点是可以快速插入数据并进行后续的后台数据处理。 MergeTree 系列引擎支持`data replication`的引擎版本），`partition`和一些其他引擎不支持的其他功能。
 
-该类型的引擎： *[MergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/) *[ReplacingMergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/replacingmergetree/) *[SummingMergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/summingmergetree/) *[AggregatingMergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/aggregatingmergetree/) *[CollapsingMergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/collapsingmergetree/) *[VersionedCollapsingMergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/versionedcollapsingmergetree/) \* [GraphiteMergeTree](https://clickhouse.yandex/docs/en/operations/table_engines/graphitemergetree/)
+该类型的引擎： 
+- `MergeTree`
+- `ReplacingMergeTree`
+- `SummingMergeTree`
+- `AggregatingMergeTree`
+- `CollapsingMergeTree`
+- `VersionedCollapsingMergeTree`
+- `GraphiteMergeTree`
 
-### Log[¶](https://clickhouse.yandex/docs/zh/single/#log "Permanent link")
+### `Log`
 
-具有最小功能的[轻量级引擎](https://clickhouse.yandex/docs/en/operations/table_engines/log_family/)。当您需要快速写入许多小表（最多约 100 万行）并在以后整体读取它们时，该类型的引擎是最有效的。
-
+- 具有最小功能的`Lightweight engines`。
+- 适合快速写入小表（最多约 `100万` 行）并在以后整体读取它们时，该类型的引擎是最有效的。
+                                                                         
 该类型的引擎：
 
-- \[TinyLog\](https://clickhouse.yandex/docs/en/operations/table_engines/tinylog/）
-- \[StripeLog\](https://clickhouse.yandex/docs/en/operations/table_engines/stripelog/）
-- \[Log\](https://clickhouse.yandex/docs/en/operations/table_engines/log/）
+- `TinyLog`
+- `StripeLog`
+- `Log`
 
-### Intergation engines[¶](https://clickhouse.yandex/docs/zh/single/#intergation-engines "Permanent link")
+### `Intergation engines`
 
 用于与其他的数据存储与处理系统集成的引擎。 该类型的引擎：
 
-- [Kafka](https://clickhouse.yandex/docs/en/operations/table_engines/kafka/)
-- [MySQL](https://clickhouse.yandex/docs/en/operations/table_engines/mysql/)
-- [ODBC](https://clickhouse.yandex/docs/en/operations/table_engines/odbc/)
-- [JDBC](https://clickhouse.yandex/docs/en/operations/table_engines/jdbc/)
-- [HDFS](https://clickhouse.yandex/docs/en/operations/table_engines/hdfs/)
+- `Kafka`
+- `MySQL`
+- `ODBC`
+- `JDBC`
+- `HDFS`
 
-### 用于其他特定功能的引擎[¶](https://clickhouse.yandex/docs/zh/single/#yong-yu-qi-ta-te-ding-gong-neng-de-yin-qing "Permanent link")
+### `Special engines`
 
 该类型的引擎：
 
-- [Distributed](https://clickhouse.yandex/docs/en/operations/table_engines/distributed/)
-- [MaterializedView](https://clickhouse.yandex/docs/en/operations/table_engines/materializedview/)
-- [Dictionary](https://clickhouse.yandex/docs/en/operations/table_engines/dictionary/)
-- [Merge](https://clickhouse.yandex/docs/en/operations/table_engines/merge/)
-- [File](https://clickhouse.yandex/docs/en/operations/table_engines/file/)
-- [Null](https://clickhouse.yandex/docs/en/operations/table_engines/null/)
-- [Set](https://clickhouse.yandex/docs/en/operations/table_engines/set/)
-- [Join](https://clickhouse.yandex/docs/en/operations/table_engines/join/)
-- [URL](https://clickhouse.yandex/docs/en/operations/table_engines/url/)
-- [View](https://clickhouse.yandex/docs/en/operations/table_engines/view/)
-- [Memory](https://clickhouse.yandex/docs/en/operations/table_engines/memory/)
-- [Buffer](https://clickhouse.yandex/docs/en/operations/table_engines/buffer/)
+- `Distributed`
+- `MaterializedView`
+- `Dictionary`
+- `Merge`
+- `File`
+- `Null`
+- `Set`
+- `Join`
+- `URL`
+- `View`
+- `Memory`
+- `Buffer`
 
-## 虚拟列[¶](https://clickhouse.yandex/docs/zh/single/#xu-ni-lie "Permanent link")
+## Virtual columns
+- `Virtual column`: 
+  - `table engines` 组成的一部分
+    - 源代码定义
+  - `read only`
+  - 不在  `CREATE TABLE` 指定
+  - 不会在下列场景结果中：
+    - `SHOW CREATE TABLE`
+    - `DESCRIBE TABLE`
+  - 必须指定`virtual column`名称才能查询其中的数据
+  - 若建表时指定的列名和虚拟列名冲突，虚拟列将不再提供查询功能。
+  - 虚拟列一般以 `_` 开头
 
-虚拟列是表引擎组成的一部分，它在对应的表引擎的源代码中定义。
+## MergeTree
 
-您不能在  `CREATE TABLE`  中指定虚拟列，并且虚拟列不会包含在  `SHOW CREATE TABLE`  和  `DESCRIBE TABLE`  的查询结果中。虚拟列是只读的，所以您不能向虚拟列中写入数据。
+- `MergeTree` 系列
+  - `ClickHouse` 最强大的 `table engines`。
+  - 巨量数据批量写入，按规则合并。
+  - 表数据按`primary key` 排序(小稀疏索引)， 利于快速检索数据
+  - 支持分区，加快检索速度。
+  - 支持数据副本(`ReplicatedMergeTree`)
+  - 可以给表数据指定采样方法
 
-如果想要查询虚拟列中的数据，您必须在 SELECT 查询中包含虚拟列的名字。SELECT \* 不会返回虚拟列的内容。
+### Creating a Table
 
-若您创建的表中有一列与虚拟列的名字相同，那么虚拟列将不能再被访问。我们不建议您这样做。为了避免这种列名的冲突，虚拟列的名字一般都以下划线开头。
-
-## MergeTree[¶](https://clickhouse.yandex/docs/zh/single/#table_engines-mergetree "Permanent link")
-
-Clickhouse 中最强大的表引擎当属  `MergeTree` （合并树）引擎及该系列（`*MergeTree`）中的其他引擎。
-
-`MergeTree`  引擎系列的基本理念如下。当你有巨量数据要插入到表中，你要高效地一批批写入数据片段，并希望这些数据片段在后台按照一定规则合并。相比在插入时不断修改（重写）数据进存储，这种策略会高效很多。
-
-主要特点:
-
-- 存储的数据按主键排序。
-
-  这让你可以创建一个用于快速检索数据的小稀疏索引。
-
-- 允许使用分区，如果指定了  [分区键](https://clickhouse.yandex/docs/zh/single/#custom_partitioning_key/)  的话。
-
-  在相同数据集和相同结果集的情况下 ClickHouse 中某些带分区的操作会比普通操作更快。查询中指定了分区键时 ClickHouse 会自动截取分区数据。这也有效增加了查询性能。
-
-- 支持数据副本。
-
-  `ReplicatedMergeTree`  系列的表便是用于此。更多信息，请参阅  [数据副本](https://clickhouse.yandex/docs/zh/single/#replication/)  一节。
-
-- 支持数据采样。
-
-  需要的话，你可以给表设置一个采样方法。
-
-!!! 注意  [Merge](https://clickhouse.yandex/docs/zh/single/#merge/)  引擎并不属于  `*MergeTree`  系列。
-
-### 建表[¶](https://clickhouse.yandex/docs/zh/single/#table_engine-mergetree-creating-a-table "Permanent link")
-
-CREATE TABLE \[IF NOT EXISTS\] \[db.\]table_name \[ON CLUSTER cluster\]
+```
+CREATE TABLE [IF NOT EXISTS] [db.]table_name [ON CLUSTER cluster]
 (
-name1 \[type1\] \[DEFAULT|MATERIALIZED|ALIAS expr1\],
-name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
-...
-INDEX index_name1 expr1 TYPE type1(...) GRANULARITY value1,
-INDEX index_name2 expr2 TYPE type2(...) GRANULARITY value2
+    name1 [type1] [DEFAULT|MATERIALIZED|ALIAS expr1] [TTL expr1],
+    name2 [type2] [DEFAULT|MATERIALIZED|ALIAS expr2] [TTL expr2],
+    ...
+    INDEX index_name1 expr1 TYPE type1(...) GRANULARITY value1,
+    INDEX index_name2 expr2 TYPE type2(...) GRANULARITY value2
 ) ENGINE = MergeTree()
-\[PARTITION BY expr\]
-\[ORDER BY expr\]
-\[PRIMARY KEY expr\]
-\[SAMPLE BY expr\]
-\[SETTINGS name=value, ...\]
+[PARTITION BY expr]
+[ORDER BY expr]
+[PRIMARY KEY expr]
+[SAMPLE BY expr]
+[TTL expr]
+[SETTINGS name=value, ...]
+```
 
-请求参数的描述，参考  [请求描述](https://clickhouse.yandex/docs/zh/single/#../../query_language/create/) 。
+**Query Clauses**
 
-**子句**
+- `ENGINE`: 引擎名和参数。 `ENGINE = MergeTree()`. `MergeTree`  引擎没有参数。
+- `PARTITION BY`: 分区键
+  - `Month`:  `toYYYYMM(date_column)`
+    - `data_column`： Date 类型的列
+- `ORDER BY` : 表的排序键。
+  - 列元组或任意的表达式。
+    - `ORDER BY (CounterID, EventDate)`
 
-- `ENGINE` \- 引擎名和参数。 `ENGINE = MergeTree()`. `MergeTree`  引擎没有参数。
+- `PRIMARY KEY` \-  `primary key` ，如果要设成  [跟排序键不相同](https://clickhouse.yandex/docs/zh/single/#mergetree/)。
 
-- `PARTITION BY` — [分区键](https://clickhouse.yandex/docs/zh/single/#custom_partitioning_key/) 。
-
-  要按月分区，可以使用表达式  `toYYYYMM(date_column)` ，这里的  `date_column`  是一个  [Date](https://clickhouse.yandex/docs/zh/single/#../../data_types/date/)  类型的列。这里该分区名格式会是  `"YYYYMM"`  这样。
-
-- `ORDER BY` — 表的排序键。
-
-  可以是一组列的元组或任意的表达式。 例如: `ORDER BY (CounterID, EventDate)` 。
-
-- `PRIMARY KEY` \- 主键，如果要设成  [跟排序键不相同](https://clickhouse.yandex/docs/zh/single/#mergetree/)。
-
-  默认情况下主键跟排序键（由  `ORDER BY`  子句指定）相同。 因此，大部分情况下不需要再专门指定一个  `PRIMARY KEY`  子句。
+  默认情况下 `primary key` 跟排序键（由  `ORDER BY`  子句指定）相同。 因此，大部分情况下不需要再专门指定一个  `PRIMARY KEY`  子句。
 
 - `SAMPLE BY` — 用于抽样的表达式。
 
-  如果要用抽样表达式，主键中必须包含这个表达式。例如： `SAMPLE BY intHash32(UserID) ORDER BY (CounterID, EventDate, intHash32(UserID))` 。
+  如果要用抽样表达式， `primary key` 中必须包含这个表达式。例如： `SAMPLE BY intHash32(UserID) ORDER BY (CounterID, EventDate, intHash32(UserID))` 。
 
 - `SETTINGS` — 影响  `MergeTree`  性能的额外参数：
 
@@ -148,19 +142,19 @@ ENGINE MergeTree() PARTITION BY toYYYYMM(EventDate) ORDER BY (CounterID, EventDa
 
 ### 数据存储[¶](https://clickhouse.yandex/docs/zh/single/#shu-ju-cun-chu "Permanent link")
 
-表由按主键排序的数据  *片段*  组成。
+表由按 `primary key` 排序的数据  *片段*  组成。
 
-当数据被插入到表中时，会分成数据片段并按主键的字典序排序。例如，主键是  `(CounterID, Date)`  时，片段中数据按  `CounterID`  排序，具有相同  `CounterID`  的部分按  `Date`  排序。
+当数据被插入到表中时，会分成数据片段并按 `primary key` 的字典序排序。例如， `primary key` 是  `(CounterID, Date)`  时，片段中数据按  `CounterID`  排序，具有相同  `CounterID`  的部分按  `Date`  排序。
 
-不同分区的数据会被分成不同的片段，ClickHouse 在后台合并数据片段以便更高效存储。不会合并来自不同分区的数据片段。这个合并机制并不保证相同主键的所有行都会合并到同一个数据片段中。
+不同分区的数据会被分成不同的片段，ClickHouse 在后台合并数据片段以便更高效存储。不会合并来自不同分区的数据片段。这个合并机制并不保证相同 `primary key` 的所有行都会合并到同一个数据片段中。
 
-ClickHouse 会为每个数据片段创建一个索引文件，索引文件包含每个索引行（『标记』）的主键值。索引行号定义为  `n * index_granularity` 。最大的  `n`  等于总行数除以  `index_granularity`  的值的整数部分。对于每列，跟主键相同的索引行处也会写入『标记』。这些『标记』让你可以直接找到数据所在的列。
+ClickHouse 会为每个数据片段创建一个索引文件，索引文件包含每个索引行（『标记』）的 `primary key` 值。索引行号定义为  `n * index_granularity` 。最大的  `n`  等于总行数除以  `index_granularity`  的值的整数部分。对于每列，跟 `primary key` 相同的索引行处也会写入『标记』。这些『标记』让你可以直接找到数据所在的列。
 
 你可以只用一单一大表并不断地一块块往里面加入数据 – `MergeTree`  引擎的就是为了这样的场景。
 
-### 主键和索引在查询中的表现[¶](https://clickhouse.yandex/docs/zh/single/#primary-keys-and-indexes-in-queries "Permanent link")
+###  `primary key` 和索引在查询中的表现[¶](https://clickhouse.yandex/docs/zh/single/#primary-keys-and-indexes-in-queries "Permanent link")
 
-我们以  `(CounterID, Date)`  以主键。排序好的索引的图示会是下面这样：
+我们以  `(CounterID, Date)`  以 `primary key` 。排序好的索引的图示会是下面这样：
 
 全部数据 : \[-------------------------------------------------------------------------\]
 CounterID: \[aaaaaaaaaaaaaaaaaabbbbcdeeeeeeeeeeeeefgggggggghhhhhhhhhiiiiiiiiikllllllll\]
@@ -177,43 +171,43 @@ a,1 a,2 a,3 b,3 e,2 e,3 g,1 h,2 i,1 i,3 l,3
 
 上面例子可以看出使用索引通常会比全表描述要高效。
 
-稀疏索引会引起额外的数据读取。当读取主键单个区间范围的数据时，每个数据块中最多会多读  `index_granularity * 2`  行额外的数据。大部分情况下，当  `index_granularity = 8192`  时，ClickHouse 的性能并不会降级。
+稀疏索引会引起额外的数据读取。当读取 `primary key` 单个区间范围的数据时，每个数据块中最多会多读  `index_granularity * 2`  行额外的数据。大部分情况下，当  `index_granularity = 8192`  时，ClickHouse 的性能并不会降级。
 
 稀疏索引让你能操作有巨量行的表。因为这些索引是常驻内存（RAM）的。
 
-ClickHouse 不要求主键惟一。所以，你可以插入多条具有相同主键的行。
+ClickHouse 不要求 `primary key` 惟一。所以，你可以插入多条具有相同 `primary key` 的行。
 
-#### 主键的选择[¶](https://clickhouse.yandex/docs/zh/single/#zhu-jian-de-xuan-ze "Permanent link")
+####  `primary key` 的选择[¶](https://clickhouse.yandex/docs/zh/single/#zhu-jian-de-xuan-ze "Permanent link")
 
-主键中列的数量并没有明确的限制。依据数据结构，你应该让主键包含多些或少些列。这样可以：
+ `primary key` 中列的数量并没有明确的限制。依据数据结构，你应该让 `primary key` 包含多些或少些列。这样可以：
 
 - 改善索引的性能。
 
-  如果当前主键是  `(a, b)` ，然后加入另一个  `c`  列，满足下面条件时，则可以改善性能： \- 有带有  `c`  列条件的查询。 \- 很长的数据范围（ `index_granularity`  的数倍）里  `(a, b)`  都是相同的值，并且这种的情况很普遍。换言之，就是加入另一列后，可以让你的查询略过很长的数据范围。
+  如果当前 `primary key` 是  `(a, b)` ，然后加入另一个  `c`  列，满足下面条件时，则可以改善性能： \- 有带有  `c`  列条件的查询。 \- 很长的数据范围（ `index_granularity`  的数倍）里  `(a, b)`  都是相同的值，并且这种的情况很普遍。换言之，就是加入另一列后，可以让你的查询略过很长的数据范围。
 
 - 改善数据压缩。
 
-  ClickHouse 以主键排序片段数据，所以，数据的一致性越高，压缩越好。
+  ClickHouse 以 `primary key` 排序片段数据，所以，数据的一致性越高，压缩越好。
 
 - [CollapsingMergeTree](https://clickhouse.yandex/docs/zh/single/#table_engine-collapsingmergetree)  和  [SummingMergeTree](https://clickhouse.yandex/docs/zh/single/#summingmergetree/)  引擎里，数据合并时，会有额外的处理逻辑。
 
-  在这种情况下，指定一个跟主键不同的  *排序键*  也是有意义的。
+  在这种情况下，指定一个跟 `primary key` 不同的  *排序键*  也是有意义的。
 
-长的主键会对插入性能和内存消耗有负面影响，但主键中额外的列并不影响  `SELECT`  查询的性能。
+长的 `primary key` 会对插入性能和内存消耗有负面影响，但 `primary key` 中额外的列并不影响  `SELECT`  查询的性能。
 
-#### 选择跟排序键不一样主键[¶](https://clickhouse.yandex/docs/zh/single/#xuan-ze-gen-pai-xu-jian-bu-yi-yang-zhu-jian "Permanent link")
+#### 选择跟排序键不一样 `primary key` `[¶](https://clickhouse.yandex/docs/zh/single/#xuan-ze-gen-pai-xu-jian-bu-yi-yang-zhu-jian "Permanent link")
 
-指定一个跟排序键（用于排序数据片段中行的表达式） 不一样的主键（用于计算写到索引文件的每个标记值的表达式）是可以的。 这种情况下，主键表达式元组必须是排序键表达式元组的一个前缀。
+指定一个跟排序键（用于排序数据片段中行的表达式） 不一样的 `primary key` `（用于计算写到索引文件的每个标记值的表达式）是可以的。 这种情况下， `primary key` 表达式元组必须是排序键表达式元组的一个前缀。
 
 当使用  [SummingMergeTree](https://clickhouse.yandex/docs/zh/single/#summingmergetree/)  和  [AggregatingMergeTree](https://clickhouse.yandex/docs/zh/single/#aggregatingmergetree/)  引擎时，这个特性非常有用。 通常，使用这类引擎时，表里列分两种：*维度*  和  *度量* 。 典型的查询是在  `GROUP BY`  并过虑维度的情况下统计度量列的值。 像 SummingMergeTree 和 AggregatingMergeTree ，用相同的排序键值统计行时， 通常会加上所有的维度。结果就是，这键的表达式会是一长串的列组成， 并且这组列还会因为新加维度必须频繁更新。
 
-这种情况下，主键中仅预留少量列保证高效范围扫描， 剩下的维度列放到排序键元组里。这样是合理的。
+这种情况下， `primary key` 中仅预留少量列保证高效范围扫描， 剩下的维度列放到排序键元组里。这样是合理的。
 
 [排序键的修改](https://clickhouse.yandex/docs/zh/single/#../../query_language/alter/)  是轻量级的操作，因为一个新列同时被加入到表里和排序键后时，已存在的数据片段并不需要修改。由于旧的排序键是新排序键的前缀，并且刚刚添加的列中没有数据，因此在表修改时的数据对于新旧的排序键来说都是有序的。
 
 #### 索引和分区在查询中的应用[¶](https://clickhouse.yandex/docs/zh/single/#suo-yin-he-fen-qu-zai-cha-xun-zhong-de-ying-yong "Permanent link")
 
-对于  `SELECT`  查询，ClickHouse 分析是否可以使用索引。如果  `WHERE/PREWHERE`  子句具有下面这些表达式（作为谓词链接一子项或整个）则可以使用索引：基于主键或分区键的列或表达式的部分的等式或比较运算表达式；基于主键或分区键的列或表达式的固定前缀的  `IN`  或  `LIKE`  表达式；基于主键或分区键的列的某些函数；基于主键或分区键的表达式的逻辑表达式。
+对于  `SELECT`  查询，ClickHouse 分析是否可以使用索引。如果  `WHERE/PREWHERE`  子句具有下面这些表达式（作为谓词链接一子项或整个）则可以使用索引：基于 `primary key` 或分区键的列或表达式的部分的等式或比较运算表达式；基于 `primary key` 或分区键的列或表达式的固定前缀的  `IN`  或  `LIKE`  表达式；基于 `primary key` 或分区键的列的某些函数；基于 `primary key` 或分区键的表达式的逻辑表达式。
 
 因此，在索引键的一个或多个区间上快速地跑查询都是可能的。下面例子中，指定标签；指定标签和日期范围；指定标签和日期；指定多个标签和日期范围等运行查询，都会非常快。
 
@@ -227,7 +221,7 @@ SELECT count() FROM table WHERE EventDate = toDate(now()) AND CounterID = 34
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND (CounterID = 34 OR CounterID = 42)
 SELECT count() FROM table WHERE ((EventDate >= toDate('2014-01-01') AND EventDate <= toDate('2014-01-31')) OR EventDate = toDate('2014-05-01')) AND CounterID IN (101500, 731962, 160656) AND (CounterID = 101500 OR EventDate != toDate('2014-05-01'))
 
-ClickHouse 会依据主键索引剪掉不符合的数据，依据按月分区的分区键剪掉那些不包含符合数据的分区。
+ClickHouse 会依据 `primary key` 索引剪掉不符合的数据，依据按月分区的分区键剪掉那些不包含符合数据的分区。
 
 上文的查询显示，即使索引用于复杂表达式。因为读表操作是组织好的，所以，使用索引不会比完整扫描慢。
 
@@ -237,7 +231,7 @@ SELECT count() FROM table WHERE CounterID = 34 OR URL LIKE '%upyachka%'
 
 要检查 ClickHouse 执行一个查询时能否使用索引，可设置  [force_index_by_date](https://clickhouse.yandex/docs/zh/single/#settings-force_index_by_date)  和  [force_primary_key](https://clickhouse.yandex/docs/zh/single/#../settings/settings/) 。
 
-按月分区的分区键是只能读取包含适当范围日期的数据块。这种情况下，数据块会包含很多天（最多整月）的数据。在块中，数据按主键排序，主键第一列可能不包含日期。因此，仅使用日期而没有带主键前缀条件的查询将会导致读取超过这个日期范围。
+按月分区的分区键是只能读取包含适当范围日期的数据块。这种情况下，数据块会包含很多天（最多整月）的数据。在块中，数据按 `primary key` 排序， `primary key` 第一列可能不包含日期。因此，仅使用日期而没有带 `primary key` 前缀条件的查询将会导致读取超过这个日期范围。
 
 #### 跳数索引（分段汇总索引，实验性的）[¶](https://clickhouse.yandex/docs/zh/single/#tiao-shu-suo-yin-fen-duan-hui-zong-suo-yin-shi-yan-xing-de "Permanent link")
 
@@ -249,7 +243,7 @@ INDEX index_name expr TYPE type(...) GRANULARITY granularity_value
 
 `*MergeTree`  系列的表都能指定跳数索引。
 
-这些索引是由数据块按粒度分割后的每部分在指定表达式上汇总信息  `granularity_value`  组成（粒度大小用表引擎里  `index_granularity`  的指定）。 这些汇总信息有助于用  `where`  语句跳过大片不满足的数据，从而减少  `SELECT`  查询从磁盘读取的数据量，
+这些索引是由数据块按粒度分割后的每部分在指定表达式上汇总信息  `granularity_value`  组成（粒度大小用`table engines`里  `index_granularity`  的指定）。 这些汇总信息有助于用  `where`  语句跳过大片不满足的数据，从而减少  `SELECT`  查询从磁盘读取的数据量，
 
 示例
 
@@ -271,7 +265,7 @@ SELECT count() FROM table WHERE u64 _ i32 == 10 AND u64 _ length(s) >= 1234
 
 ##### 索引的可用类型[¶](https://clickhouse.yandex/docs/zh/single/#suo-yin-de-ke-yong-lei-xing "Permanent link")
 
-- `minmax`  存储指定表达式的极值（如果表达式是  `tuple` ，则存储  `tuple`  中每个元素的极值），这些信息用于跳过数据块，类似主键。
+- `minmax`  存储指定表达式的极值（如果表达式是  `tuple` ，则存储  `tuple`  中每个元素的极值），这些信息用于跳过数据块，类似 `primary key` 。
 
 - `set(max_rows)`  存储指定表达式的惟一值（不超过  `max_rows`  个，`max_rows=0`  则表示『无限制』）。这些信息可用于检查  `WHERE`  表达式是否满足某个数据块。
 
@@ -358,7 +352,7 @@ INDEX sample_index3 (lower(str), str) TYPE ngrambf_v1(3, 256, 2, 0) GRANULARITY 
 
 ### 创建复制表[¶](https://clickhouse.yandex/docs/zh/single/#creating-replicated-tables "Permanent link")
 
-在表引擎名称上加上  `Replicated`  前缀。例如：`ReplicatedMergeTree`。
+在`table engines`名称上加上  `Replicated`  前缀。例如：`ReplicatedMergeTree`。
 
 **Replicated\*MergeTree 参数**
 
@@ -453,7 +447,7 @@ sudo -u clickhouse touch /var/lib/clickhouse/flags/force_restore_data
 
 ### MergeTree 转换为 ReplicatedMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#mergetree-zhuan-huan-wei-replicatedmergetree "Permanent link")
 
-我们使用  `MergeTree`  来表示  `MergeTree系列`  中的所有表引擎，`ReplicatedMergeTree`  同理。
+我们使用  `MergeTree`  来表示  `MergeTree系列`  中的所有`table engines`，`ReplicatedMergeTree`  同理。
 
 如果你有一个手动同步的  `MergeTree`  表，您可以将其转换为可复制表。如果你已经在  `MergeTree`  表中收集了大量数据，并且现在要启用复制，则可以执行这些操作。
 
@@ -494,7 +488,7 @@ ENGINE = MergeTree()
 PARTITION BY toYYYYMM(VisitDate)
 ORDER BY Hour;
 
-分区键也可以是表达式元组（类似  [主键](https://clickhouse.yandex/docs/zh/single/#primary-keys-and-indexes-in-queries) ）。例如：
+分区键也可以是表达式元组（类似  [ `primary key` `](https://clickhouse.yandex/docs/zh/single/#primary-keys-and-indexes-in-queries) ）。例如：
 
 ENGINE = ReplicatedCollapsingMergeTree('/clickhouse/tables/name', 'replica1', Sign)
 PARTITION BY (toMonday(StartDate), EventType)
@@ -502,7 +496,7 @@ ORDER BY (CounterID, StartDate, intHash32(UserID));
 
 上例中，我们设置按一周内的事件类型分区。
 
-新数据插入到表中时，这些数据会存储为按主键排序的新片段（块）。插入后 10-15 分钟，同一分区的各个片段会合并为一整个片段。
+新数据插入到表中时，这些数据会存储为按 `primary key` 排序的新片段（块）。插入后 10-15 分钟，同一分区的各个片段会合并为一整个片段。
 
 注意
 
@@ -585,7 +579,7 @@ ClickHouse 支持对分区执行这些操作：删除分区，从一个表复制
 
 ## ReplacingMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#replacingmergetree "Permanent link")
 
-该引擎和[MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)的不同之处在于它会删除具有相同主键的重复项。
+该引擎和[MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)的不同之处在于它会删除具有相同 `primary key` 的重复项。
 
 数据的去重只会在合并的过程中出现。合并会在未知的时间在后台进行，因此你无法预先作出计划。有一些数据可能仍未被处理。尽管你可以调用  `OPTIMIZE`  语句发起计划外的合并，但请不要指望使用它，因为  `OPTIMIZE`  语句会引发对大量数据的读和写。
 
@@ -610,7 +604,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 - `ver` — 版本列。类型为  `UInt*`, `Date`  或  `DateTime`。可选参数。
 
-  合并的时候，`ReplacingMergeTree`  从所有具有相同主键的行中选择一行留下： \- 如果  `ver`  列未指定，选择最后一条。 \- 如果  `ver`  列已指定，选择  `ver`  值最大的版本。
+  合并的时候，`ReplacingMergeTree`  从所有具有相同 `primary key` 的行中选择一行留下： \- 如果  `ver`  列未指定，选择最后一条。 \- 如果  `ver`  列已指定，选择  `ver`  值最大的版本。
 
 **子句**
 
@@ -620,9 +614,9 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 ## SummingMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#summingmergetree "Permanent link")
 
-该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)。区别在于，当合并  `SummingMergeTree`  表的数据片段时，ClickHouse 会把所有具有相同主键的行合并为一行，该行包含了被合并的行中具有数值数据类型的列的汇总值。如果主键的组合方式使得单个键值对应于大量的行，则可以显著的减少存储空间并加快数据查询的速度。
+该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)。区别在于，当合并  `SummingMergeTree`  表的数据片段时，ClickHouse 会把所有具有相同 `primary key` 的行合并为一行，该行包含了被合并的行中具有数值数据类型的列的汇总值。如果 `primary key` 的组合方式使得单个键值对应于大量的行，则可以显著的减少存储空间并加快数据查询的速度。
 
-我们推荐将该引擎和  `MergeTree`  一起使用。例如，在准备做报告的时候，将完整的数据存储在  `MergeTree`  表中，并且使用  `SummingMergeTree`  来存储聚合数据。这种方法可以使你避免因为使用不正确的主键组合方式而丢失有价值的数据。
+我们推荐将该引擎和  `MergeTree`  一起使用。例如，在准备做报告的时候，将完整的数据存储在  `MergeTree`  表中，并且使用  `SummingMergeTree`  来存储聚合数据。这种方法可以使你避免因为使用不正确的 `primary key` 组合方式而丢失有价值的数据。
 
 ### 建表[¶](https://clickhouse.yandex/docs/zh/single/#jian-biao_1 "Permanent link")
 
@@ -641,9 +635,9 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 **SummingMergeTree 的参数**
 
-- `columns` \- 包含了将要被汇总的列的列名的元组。可选参数。 所选的列必须是数值类型，并且不可位于主键中。
+- `columns` \- 包含了将要被汇总的列的列名的元组。可选参数。 所选的列必须是数值类型，并且不可位于 `primary key` 中。
 
-  如果没有指定  `columns`，ClickHouse 会把所有不在主键中的数值类型的列都进行汇总。
+  如果没有指定  `columns`，ClickHouse 会把所有不在 `primary key` 中的数值类型的列都进行汇总。
 
 **子句**
 
@@ -678,9 +672,9 @@ SELECT key, sum(value) FROM summtt GROUP BY key
 
 ### 数据处理[¶](https://clickhouse.yandex/docs/zh/single/#data-processing "Permanent link")
 
-当数据被插入到表中时，他们将被原样保存。ClickHouse 定期合并插入的数据片段，并在这个时候对所有具有相同主键的行中的列进行汇总，将这些行替换为包含汇总数据的一行记录。
+当数据被插入到表中时，他们将被原样保存。ClickHouse 定期合并插入的数据片段，并在这个时候对所有具有相同 `primary key` 的行中的列进行汇总，将这些行替换为包含汇总数据的一行记录。
 
-ClickHouse 会按片段合并数据，以至于不同的数据片段中会包含具有相同主键的行，即单个汇总片段将会是不完整的。因此，聚合函数  [sum()](https://clickhouse.yandex/docs/zh/single/#agg_function-sum)  和  `GROUP BY`  子句应该在（`SELECT`）查询语句中被使用，如上文中的例子所述。
+ClickHouse 会按片段合并数据，以至于不同的数据片段中会包含具有相同 `primary key` 的行，即单个汇总片段将会是不完整的。因此，聚合函数  [sum()](https://clickhouse.yandex/docs/zh/single/#agg_function-sum)  和  `GROUP BY`  子句应该在（`SELECT`）查询语句中被使用，如上文中的例子所述。
 
 #### 汇总的通用规则[¶](https://clickhouse.yandex/docs/zh/single/#hui-zong-de-tong-yong-gui-ze "Permanent link")
 
@@ -688,9 +682,9 @@ ClickHouse 会按片段合并数据，以至于不同的数据片段中会包含
 
 如果用于汇总的所有列中的值均为 0，则该行会被删除。
 
-如果列不在主键中且无法被汇总，则会在现有的值中任选一个。
+如果列不在 `primary key` 中且无法被汇总，则会在现有的值中任选一个。
 
-主键所在的列中的值不会被汇总。
+ `primary key` 所在的列中的值不会被汇总。
 
 #### AggregateFunction 列中的汇总[¶](https://clickhouse.yandex/docs/zh/single/#aggregatefunction-lie-zhong-de-hui-zong "Permanent link")
 
@@ -720,7 +714,7 @@ ClickHouse 会按片段合并数据，以至于不同的数据片段中会包含
 
 ## AggregatingMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#aggregatingmergetree "Permanent link")
 
-该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)，并改变了数据片段的合并逻辑。 ClickHouse 会将相同主键的所有行（在一个数据片段内）替换为单个存储一系列聚合函数状态的行。
+该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)，并改变了数据片段的合并逻辑。 ClickHouse 会将相同 `primary key` 的所有行（在一个数据片段内）替换为单个存储一系列聚合函数状态的行。
 
 可以使用  `AggregatingMergeTree`  表来做增量数据统计聚合，包括物化视图的数据聚合。
 
@@ -864,7 +858,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 #### 算法[¶](https://clickhouse.yandex/docs/zh/single/#table_engine-collapsingmergetree-collapsing-algorithm "Permanent link")
 
-当 ClickHouse 合并数据片段时，每组具有相同主键的连续行被减少到不超过两行，一行  `Sign = 1`（“状态”行），另一行  `Sign = -1` （“取消”行），换句话说，数据项被折叠了。
+当 ClickHouse 合并数据片段时，每组具有相同 `primary key` 的连续行被减少到不超过两行，一行  `Sign = 1`（“状态”行），另一行  `Sign = -1` （“取消”行），换句话说，数据项被折叠了。
 
 对每个结果的数据部分 ClickHouse 保存：
 
@@ -877,7 +871,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 因此，折叠不应该改变统计数据的结果。 变化逐渐地被折叠，因此最终几乎每个对象都只剩下了最后的状态。
 
-`Sign`  是必须的因为合并算法不保证所有有相同主键的行都会在同一个结果数据片段中，甚至是在同一台物理服务器上。ClickHouse 用多线程来处理  `SELECT`  请求，所以它不能预测结果中行的顺序。如果要从  `CollapsingMergeTree`  表中获取完全“折叠”后的数据，则需要聚合。
+`Sign`  是必须的因为合并算法不保证所有有相同 `primary key` 的行都会在同一个结果数据片段中，甚至是在同一台物理服务器上。ClickHouse 用多线程来处理  `SELECT`  请求，所以它不能预测结果中行的顺序。如果要从  `CollapsingMergeTree`  表中获取完全“折叠”后的数据，则需要聚合。
 
 要完成折叠，请使用  `GROUP BY`  子句和用于处理符号的聚合函数编写请求。例如，要计算数量，使用  `sum(Sign)`  而不是  `count()`。要计算某物的总和，使用  `sum(Sign * x)`  而不是  `sum(x)`，并添加  `HAVING sum(Sign) > 0`  子句。
 
@@ -1382,11 +1376,11 @@ SELECT \* FROM stripe_log_table ORDER BY timestamp
 
 ## TinyLog[¶](https://clickhouse.yandex/docs/zh/single/#tinylog "Permanent link")
 
-最简单的表引擎，用于将数据存储在磁盘上。每列都存储在单独的压缩文件中。写入时，数据将附加到文件末尾。
+最简单的`table engines``，用于将数据存储在磁盘上。每列都存储在单独的压缩文件中。写入时，数据将附加到文件末尾。
 
 并发数据访问不受任何限制： \- 如果同时从表中读取并在不同的查询中写入，则读取操作将抛出异常 \- 如果同时写入多个查询中的表，则数据将被破坏。
 
-这种表引擎的典型用法是 write-once：首先只写入一次数据，然后根据需要多次读取。查询在单个流中执行。换句话说，此引擎适用于相对较小的表（建议最多 1,000,000 行）。如果您有许多小表，则使用此表引擎是适合的，因为它比 Log 引擎更简单（需要打开的文件更少）。当您拥有大量小表时，可能会导致性能低下，但在可能已经在其它 DBMS 时使用过，则您可能会发现切换使用 TinyLog 类型的表更容易。**不支持索引**。
+这种`table engines`的典型用法是 write-once：首先只写入一次数据，然后根据需要多次读取。查询在单个流中执行。换句话说，此引擎适用于相对较小的表（建议最多 1,000,000 行）。如果您有许多小表，则使用此`table engines`是适合的，因为它比 Log 引擎更简单（需要打开的文件更少）。当您拥有大量小表时，可能会导致性能低下，但在可能已经在其它 DBMS 时使用过，则您可能会发现切换使用 TinyLog 类型的表更容易。**不支持索引**。
 
 在 Yandex.Metrica 中，TinyLog 表用于小批量处理的中间数据。
 
@@ -2088,19 +2082,19 @@ FROM WatchLog
 │ 2018-01-02 │ 2 │ hit │ 3 │
 └────────────┴────────┴───────────┴─────┘
 
-### 虚拟列[¶](https://clickhouse.yandex/docs/zh/single/#xu-ni-lie_1 "Permanent link")
+### `Virtual column`[¶](https://clickhouse.yandex/docs/zh/single/#xu-ni-lie_1 "Permanent link")
 
-虚拟列是一种由表引擎提供而不是在表定义中的列。换种说法就是，这些列并没有在  `CREATE TABLE`  中指定，但可以在  `SELECT`  中使用。
+`Virtual column`是一种由`table engines`提供而不是在表定义中的列。换种说法就是，这些列并没有在  `CREATE TABLE`  中指定，但可以在  `SELECT`  中使用。
 
-下面列出虚拟列跟普通列的不同点：
+下面列出`Virtual column`跟普通列的不同点：
 
-- 虚拟列不在表结构定义里指定。
-- 不能用  `INSERT`  向虚拟列写数据。
-- 使用不指定列名的  `INSERT`  语句时，虚拟列要会被忽略掉。
-- 使用星号通配符（ `SELECT *` ）时虚拟列不会包含在里面。
-- 虚拟列不会出现在  `SHOW CREATE TABLE`  和  `DESC TABLE`  的查询结果里。
+- `Virtual column`不在表结构定义里指定。
+- 不能用  `INSERT`  向`Virtual column`写数据。
+- 使用不指定列名的  `INSERT`  语句时，`Virtual column`要会被忽略掉。
+- 使用星号通配符（ `SELECT *` ）时`Virtual column`不会包含在里面。
+- `Virtual column`不会出现在  `SHOW CREATE TABLE`  和  `DESC TABLE`  的查询结果里。
 
-`Merge`  类型的表包括一个  `String`  类型的  `_table`  虚拟列。（如果该表本来已有了一个  `_table`  的列，那这个虚拟列会命名为  `_table1` ；如果  `_table1`  也本就存在了，那这个虚拟列会被命名为  `_table2` ，依此类推）该列包含被读数据的表名。
+`Merge`  类型的表包括一个  `String`  类型的  `_table`  `Virtual column`。（如果该表本来已有了一个  `_table`  的列，那这个`Virtual column`会命名为  `_table1` ；如果  `_table1`  也本就存在了，那这个`Virtual column`会被命名为  `_table2` ，依此类推）该列包含被读数据的表名。
 
 如果  `WHERE/PREWHERE`  子句包含了带  `_table`  的条件，并且没有依赖其他的列（如作为表达式谓词链接的一个子项或作为整个的表达式），这些条件的作用会像索引一样。这些条件会在那些可能被读数据的表的表名上执行，并且读操作只会在那些满足了该条件的表上去执行。
 
@@ -2260,7 +2254,7 @@ SELECT \* FROM url_engine_table
 
 ## Memory[¶](https://clickhouse.yandex/docs/zh/single/#memory "Permanent link")
 
-Memory 引擎以未压缩的形式将数据存储在 RAM 中。数据完全以读取时获得的形式存储。换句话说，从这张表中读取是很轻松的。并发数据访问是同步的。锁范围小：读写操作不会相互阻塞。不支持索引。阅读是并行化的。在简单查询上达到最大生产率（超过 10 GB /秒），因为没有磁盘读取，不需要解压缩或反序列化数据。（值得注意的是，在许多情况下，与 MergeTree 引擎的性能几乎一样高）。重新启动服务器时，表中的数据消失，表将变为空。通常，使用此表引擎是不合理的。但是，它可用于测试，以及在相对较少的行（最多约 100,000,000）上需要最高性能的查询。
+Memory 引擎以未压缩的形式将数据存储在 RAM 中。数据完全以读取时获得的形式存储。换句话说，从这张表中读取是很轻松的。并发数据访问是同步的。锁范围小：读写操作不会相互阻塞。不支持索引。阅读是并行化的。在简单查询上达到最大生产率（超过 10 GB /秒），因为没有磁盘读取，不需要解压缩或反序列化数据。（值得注意的是，在许多情况下，与 MergeTree 引擎的性能几乎一样高）。重新启动服务器时，表中的数据消失，表将变为空。通常，使用此`table engines`是不合理的。但是，它可用于测试，以及在相对较少的行（最多约 100,000,000）上需要最高性能的查询。
 
 Memory 引擎是由系统用于临时表进行外部数据的查询（请参阅 "外部数据用于请求处理" 部分），以及用于实现  `GLOBAL IN`（请参见 "IN 运算符" 部分）。
 
