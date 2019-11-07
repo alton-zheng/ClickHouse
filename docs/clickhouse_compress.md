@@ -63,6 +63,6 @@ output：abcde_(5,4)fgh_(14,5)fghxxxxxxx
   - 对大数据量的文本压缩场景，zstd是综合考虑压缩率和压缩性能最优的选择，其次是lz4。
   - 对小数据量的压缩场景，如果能使用zstd的字典方式，压缩效果更为突出。
 
-![compress-data](../images/compress-data.jpg)
+![compress-data](../images/compress-data.png)
 
 

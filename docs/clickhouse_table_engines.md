@@ -107,119 +107,168 @@ CREATE TABLE [IF NOT EXISTS] [db.]table_name [ON CLUSTER cluster]
 **Query Clauses**
 
 - `ENGINE`: 引擎名和参数。 `ENGINE = MergeTree()`. `MergeTree`  引擎没有参数。
+
 - `PARTITION BY`: 分区键
   - `Month`:  `toYYYYMM(date_column)`
     - `data_column`： Date 类型的列
-- `ORDER BY` : 表的排序键。
+
+- `ORDER BY` : 表的`sort key`。
   - 列元组或任意的表达式。
     - `ORDER BY (CounterID, EventDate)`
 
-- `PRIMARY KEY` \-  `primary key` ，如果要设成  [跟排序键不相同](https://clickhouse.yandex/docs/zh/single/#mergetree/)。
+- `PRIMARY KEY`: `primary key`
+  - 默认情况下 `primary key` 跟`sort key`（由  `ORDER BY`  子句指定）相同。 
+  - 因此，大部分情况下不需要再专门指定一个  `PRIMARY KEY`  子句。
 
-  默认情况下 `primary key` 跟排序键（由  `ORDER BY`  子句指定）相同。 因此，大部分情况下不需要再专门指定一个  `PRIMARY KEY`  子句。
+- `SAMPLE BY`
+  - 抽样， `primary key` 中必须包含这个表达式。
+    - 例如： `SAMPLE BY intHash32(UserID) ORDER BY (CounterID, EventDate, intHash32(UserID))` 。
 
-- `SAMPLE BY` — 用于抽样的表达式。
-
-  如果要用抽样表达式， `primary key` 中必须包含这个表达式。例如： `SAMPLE BY intHash32(UserID) ORDER BY (CounterID, EventDate, intHash32(UserID))` 。
-
-- `SETTINGS` — 影响  `MergeTree`  性能的额外参数：
-
-  - `index_granularity` — 索引粒度。即索引中相邻『标记』间的数据行数。默认值，8192 。该列表中所有可用的参数可以从这里查看  [MergeTreeSettings.h](https://github.com/ClickHouse/ClickHouse/blob/master/dbms/src/Storages/MergeTree/MergeTreeSettings.h) 。
-  - `use_minimalistic_part_header_in_zookeeper` — 数据片段头在 ZooKeeper 中的存储方式。如果设置了  `use_minimalistic_part_header_in_zookeeper=1` ，ZooKeeper 会存储更少的数据。更多信息参考『服务配置参数』这章中的  [设置描述](https://clickhouse.yandex/docs/zh/single/#server-settings-use_minimalistic_part_header_in_zookeeper) 。
-  - `min_merge_bytes_to_use_direct_io` — 使用直接 I/O 来操作磁盘的合并操作时要求的最小数据量。合并数据片段时，ClickHouse 会计算要被合并的所有数据的总存储空间。如果大小超过了  `min_merge_bytes_to_use_direct_io`  设置的字节数，则 ClickHouse 将使用直接 I/O 接口（`O_DIRECT`  选项）对磁盘读写。如果设置  `min_merge_bytes_to_use_direct_io = 0` ，则会禁用直接 I/O。默认值：`10 * 1024 * 1024 * 1024`  字节。
+- `SETTINGS`: 影响  `MergeTree`  性能的额外参数：
+  - `index_granularity`:索引粒度。
+    - 即索引中相邻『标记』间的数据行数。
+    - 默认值，8192 。
+    - 该列表中所有可用的参数可以从这里查看  [MergeTreeSettings.h](https://github.com/ClickHouse/ClickHouse/blob/master/dbms/src/Storages/MergeTree/MergeTreeSettings.h) 。
+  - `index_granularity_bytes`: 数据粒度以 `byte` 为单位的最大大小。
+    - 默认值：`10Mb`。
+    - 要仅按行数限制颗粒大小，请设置0（不建议）。请参阅`Data Storage`。
+  - `enable_mixed_granularity_parts`: 启用或禁用使用该 `index_granularity_bytes` 设置控制颗粒尺寸。
+    - 在版本19.11之前，只有 `index_granularity` 粒度限制的设置。
+    - `index_granularity_bytes` 从具有大行（数十和数百MB）的表中选择数据时，此设置可提高 `ClickHouse` 性能。因此，如果您的表具有较大的行，则可以打开表的设置以提高 `SELECT` 查询效率。
+  - `use_minimalistic_part_header_in_zookeeper`: 数据`parts`头在 `ZooKeeper` 中的存储方式。
+    - `use_minimalistic_part_header_in_zookeeper=1` ，·ZooKeeper· 会存储更少的数据。
+    - 更多信息参考『服务配置参数』,请看运维相关知识 。
+  - `min_merge_bytes_to_use_direct_io` ： 使用 `direct I/O` 来操作磁盘的合并操作时要求的最小数据量。
+    - 合并数据`parts`时，`ClickHouse` 会计算要被合并的所有数据的总存储空间。
+    - 如果大小超过了  `min_merge_bytes_to_use_direct_io`  设置的字节数，则 `ClickHouse` 将使用直接 I/O 接口（`O_DIRECT`  选项）对磁盘读写。
+    - 如果设置  `min_merge_bytes_to_use_direct_io = 0` ，则会禁用 `direct I/O`。
+    - 默认值：`10 * 1024 * 1024 * 1024`  bytes(`10G`)。
+  - `merge_with_ttl_timeout`: 重复与TTL合并之前的最小延迟（以秒为单位）。
+    - 默认值：86400（1天）。
+  - `write_final_mark`: 启用或禁用在数据部分的末尾写入最终索引标记。
+    - 默认值：1  (不要关闭此标记)
 
 **示例配置**
 
+```
 ENGINE MergeTree() PARTITION BY toYYYYMM(EventDate) ORDER BY (CounterID, EventDate, intHash32(UserID)) SAMPLE BY intHash32(UserID) SETTINGS index_granularity=8192
+```
 
-示例中，我们设为按月分区。
+- 同时我们设置了一个按用户 ID 哈希的抽样表达式。
+- 这让你可以有该表中每个  `CounterID`  和  `EventDate`  下面的数据的伪随机分布。
+- 如果你在查询时指定了  `SAMPLE` 子句。
+- `ClickHouse` 会返回对于用户子集的一个均匀的伪随机数据采样。
+- `index_granularity`  可省略，默认值为 `8192` 。
 
-同时我们设置了一个按用户 ID 哈希的抽样表达式。这让你可以有该表中每个  `CounterID`  和  `EventDate`  下面的数据的伪随机分布。如果你在查询时指定了  [SAMPLE](https://clickhouse.yandex/docs/zh/single/#select-sample-clause)  子句。 ClickHouse 会返回对于用户子集的一个均匀的伪随机数据采样。
+### Data Storage
 
-`index_granularity`  可省略，默认值为 8192 。
+- 表由按 `primary key` 排序的数据  *`parts`*  组成
+- 当数据被插入到表中时，会分成数据`parts`并按 `primary key` 的字典序排序
+- 合并相同 `partition` 数据到 `parts`
+  - 不会合并来自不同 `partition` 的数据`parts`
+  - 相同`PK`的数据可能在不同的`parts`
+- ClickHouse 会为每个数据 `part` 创建一个索引文件(.idx)，索引文件包含每个索引行（『标记』）的 `primary key` 值。
+  - 索引行号定义为  `n * index_granularity` 。
+  - 最大的  `n`  等于总行数除以  `index_granularity`  的值的整数部分。
+  - 对于每列，跟 `primary key` 相同的索引行处也会写入『标记』。这些『标记』让你可以直接找到数据所在的列。
+- 颗粒的大小受表引擎的 `index_granularity` 和 `index_granularity_bytes` 设置限制。
+  - 颗粒中的行数在此 `[1, index_granularity]` 范围内，具体取决于行的大小。
+  - `index_granularity_bytes` 如果单行的大小大于设置的值，则颗粒的大小可能会超过。在这种情况下，颗粒的大小等于行的大小。
 
-已弃用的建表方法
-
-### 数据存储[¶](https://clickhouse.yandex/docs/zh/single/#shu-ju-cun-chu "Permanent link")
-
-表由按 `primary key` 排序的数据  *片段*  组成。
-
-当数据被插入到表中时，会分成数据片段并按 `primary key` 的字典序排序。例如， `primary key` 是  `(CounterID, Date)`  时，片段中数据按  `CounterID`  排序，具有相同  `CounterID`  的部分按  `Date`  排序。
-
-不同分区的数据会被分成不同的片段，ClickHouse 在后台合并数据片段以便更高效存储。不会合并来自不同分区的数据片段。这个合并机制并不保证相同 `primary key` 的所有行都会合并到同一个数据片段中。
-
-ClickHouse 会为每个数据片段创建一个索引文件，索引文件包含每个索引行（『标记』）的 `primary key` 值。索引行号定义为  `n * index_granularity` 。最大的  `n`  等于总行数除以  `index_granularity`  的值的整数部分。对于每列，跟 `primary key` 相同的索引行处也会写入『标记』。这些『标记』让你可以直接找到数据所在的列。
-
-你可以只用一单一大表并不断地一块块往里面加入数据 – `MergeTree`  引擎的就是为了这样的场景。
-
-###  `primary key` 和索引在查询中的表现[¶](https://clickhouse.yandex/docs/zh/single/#primary-keys-and-indexes-in-queries "Permanent link")
+###  Primary keys and indexes in queries
 
 我们以  `(CounterID, Date)`  以 `primary key` 。排序好的索引的图示会是下面这样：
 
-全部数据 : \[-------------------------------------------------------------------------\]
-CounterID: \[aaaaaaaaaaaaaaaaaabbbbcdeeeeeeeeeeeeefgggggggghhhhhhhhhiiiiiiiiikllllllll\]
-Date: \[1111111222222233331233211111222222333211111112122222223111112223311122333\]
-标记: | | | | | | | | | | |
-a,1 a,2 a,3 b,3 e,2 e,3 g,1 h,2 i,1 i,3 l,3
-标记号: 0 1 2 3 4 5 6 7 8 9 10
+```
+Whole data:     [-------------------------------------------------------------------------]
+CounterID:      [aaaaaaaaaaaaaaaaaabbbbcdeeeeeeeeeeeeefgggggggghhhhhhhhhiiiiiiiiikllllllll]
+Date:           [1111111222222233331233211111222222333211111112122222223111112223311122333]
+Marks:           |      |      |      |      |      |      |      |      |      |      |
+                a,1    a,2    a,3    b,3    e,2    e,3    g,1    h,2    i,1    i,3    l,3
+Marks numbers:   0      1      2      3      4      5      6      7      8      9      10
+```
 
 如果指定查询如下：
 
 - `CounterID in ('a', 'h')`，服务器会读取标记号在  `[0, 3)`  和  `[6, 8)`  区间中的数据。
-- `CounterID IN ('a', 'h') AND Date = 3`，服务器会读取标记号在  `[1, 3)`  和  `[7, 8)`  区间中的数据。
+- `CounterID in ('a', 'h') AND Date = 3`，服务器会读取标记号在  `[1, 3)`  和  `[7, 8)`  区间中的数据。
 - `Date = 3`，服务器会读取标记号在  `[1, 10]`  区间中的数据。
 
-上面例子可以看出使用索引通常会比全表描述要高效。
+使用 `index` 比全表`Scan` 更高效。
 
-稀疏索引会引起额外的数据读取。当读取 `primary key` 单个区间范围的数据时，每个数据块中最多会多读  `index_granularity * 2`  行额外的数据。大部分情况下，当  `index_granularity = 8192`  时，ClickHouse 的性能并不会降级。
 
-稀疏索引让你能操作有巨量行的表。因为这些索引是常驻内存（RAM）的。
+- 稀疏索引
+  - 引起额外的数据读取。
+    - 当读取 `primary key` 单个 `range` 范围的数据时，每个 `data block` 中最多会多读  `index_granularity * 2`  行额外的数据。
+    - 大部分情况下，当  `index_granularity = 8192`  时，`ClickHouse` 的性能并不会降级。
+    - 能操作有巨量行的表。
+      - 因为这些索引是常驻内存（RAM）的。
 
-ClickHouse 不要求 `primary key` 惟一。所以，你可以插入多条具有相同 `primary key` 的行。
+- `ClickHouse` 不要求 `primary key` 惟一。所以，你可以插入多条具有相同 `primary key` 的行。
 
-####  `primary key` 的选择[¶](https://clickhouse.yandex/docs/zh/single/#zhu-jian-de-xuan-ze "Permanent link")
+####  Selecting the Primary Key
 
  `primary key` 中列的数量并没有明确的限制。依据数据结构，你应该让 `primary key` 包含多些或少些列。这样可以：
 
 - 改善索引的性能。
 
-  如果当前 `primary key` 是  `(a, b)` ，然后加入另一个  `c`  列，满足下面条件时，则可以改善性能： \- 有带有  `c`  列条件的查询。 \- 很长的数据范围（ `index_granularity`  的数倍）里  `(a, b)`  都是相同的值，并且这种的情况很普遍。换言之，就是加入另一列后，可以让你的查询略过很长的数据范围。
+  如果当前 `primary key` 是  `(a, b)` ，然后加入另一个  `c`  列，满足下面条件时，则可以改善性能：
+  - 有带有  `c`  列条件的查询。 
+  - 表经常有数倍于 `index_granularity` 设置值的  `(a, b)`  都是相同的值。
 
 - 改善数据压缩。
 
-  ClickHouse 以 `primary key` 排序片段数据，所以，数据的一致性越高，压缩越好。
+  - `ClickHouse` 以 `primary key` 排序`parts`数据
+    - 数据的一致性越高，压缩越好。
 
-- [CollapsingMergeTree](https://clickhouse.yandex/docs/zh/single/#table_engine-collapsingmergetree)  和  [SummingMergeTree](https://clickhouse.yandex/docs/zh/single/#summingmergetree/)  引擎里，数据合并时，会有额外的处理逻辑。
+- `CollapsingMergeTree` 和  `SummingMergeTree` 引擎里，数据合并时，会有额外的处理逻辑。
 
-  在这种情况下，指定一个跟 `primary key` 不同的  *排序键*  也是有意义的。
+  在这种情况下，指定一个跟 `primary key` 不同的  *sort by*  也是有意义的。
 
 长的 `primary key` 会对插入性能和内存消耗有负面影响，但 `primary key` 中额外的列并不影响  `SELECT`  查询的性能。
 
-#### 选择跟排序键不一样 `primary key` `[¶](https://clickhouse.yandex/docs/zh/single/#xuan-ze-gen-pai-xu-jian-bu-yi-yang-zhu-jian "Permanent link")
+#### Choosing a Primary Key that Differs from the Sorting Key
 
-指定一个跟排序键（用于排序数据片段中行的表达式） 不一样的 `primary key` `（用于计算写到索引文件的每个标记值的表达式）是可以的。 这种情况下， `primary key` 表达式元组必须是排序键表达式元组的一个前缀。
+与`sort key`不同的`primary key`。 
+  - `primary key` 表达式元组必须是`sort key`表达式元组的一个前缀。
+  - 当使用下列引擎时，这样的设置非常有价值：
+     - `SummingMergeTree`
+     -`AggregatingMergeTree`
+     - `Sort key` 经常频繁更新
+     - `primary key` 中仅预留少量列保证高效范围扫描
 
-当使用  [SummingMergeTree](https://clickhouse.yandex/docs/zh/single/#summingmergetree/)  和  [AggregatingMergeTree](https://clickhouse.yandex/docs/zh/single/#aggregatingmergetree/)  引擎时，这个特性非常有用。 通常，使用这类引擎时，表里列分两种：*维度*  和  *度量* 。 典型的查询是在  `GROUP BY`  并过虑维度的情况下统计度量列的值。 像 SummingMergeTree 和 AggregatingMergeTree ，用相同的排序键值统计行时， 通常会加上所有的维度。结果就是，这键的表达式会是一长串的列组成， 并且这组列还会因为新加维度必须频繁更新。
+- `sort key`的修改是轻量级
+  - 因为新列同时被加入到表和`sort key`后时，已存在的数据`parts`并不需要修改。
+  - 由于旧的`sort key`是新`sort key`的前缀，并且刚刚添加的列中没有数据，因此在表修改时的数据对于新旧的`sort key`来说都是有序的。
 
-这种情况下， `primary key` 中仅预留少量列保证高效范围扫描， 剩下的维度列放到排序键元组里。这样是合理的。
+#### Use of indexes and Partitions in Queries
 
-[排序键的修改](https://clickhouse.yandex/docs/zh/single/#../../query_language/alter/)  是轻量级的操作，因为一个新列同时被加入到表里和排序键后时，已存在的数据片段并不需要修改。由于旧的排序键是新排序键的前缀，并且刚刚添加的列中没有数据，因此在表修改时的数据对于新旧的排序键来说都是有序的。
+对于  `SELECT`  查询，是否可以使用索引:
+  
+- 如果  `WHERE/PREWHERE`  子句有下面这些表达式（作为谓词链接一子项或整个）则可以使用索引：
+    - 基于 `primary key` 或分区键的列或表达式:
+      - 部分的等式或比较运算表达式；
+      - 固定前缀的  `IN`  或  `LIKE`  表达式；
 
-#### 索引和分区在查询中的应用[¶](https://clickhouse.yandex/docs/zh/single/#suo-yin-he-fen-qu-zai-cha-xun-zhong-de-ying-yong "Permanent link")
+    - 基于 `primary key` 或分区键的列:
+      - 函数；
 
-对于  `SELECT`  查询，ClickHouse 分析是否可以使用索引。如果  `WHERE/PREWHERE`  子句具有下面这些表达式（作为谓词链接一子项或整个）则可以使用索引：基于 `primary key` 或分区键的列或表达式的部分的等式或比较运算表达式；基于 `primary key` 或分区键的列或表达式的固定前缀的  `IN`  或  `LIKE`  表达式；基于 `primary key` 或分区键的列的某些函数；基于 `primary key` 或分区键的表达式的逻辑表达式。
-
-因此，在索引键的一个或多个区间上快速地跑查询都是可能的。下面例子中，指定标签；指定标签和日期范围；指定标签和日期；指定多个标签和日期范围等运行查询，都会非常快。
+    - 基于 `primary key` 或分区键的表达式:
+      - 逻辑表达式。
 
 当引擎配置如下时：
 
+```
 ENGINE MergeTree() PARTITION BY toYYYYMM(EventDate) ORDER BY (CounterID, EventDate) SETTINGS index_granularity=8192
+```
 
 这种情况下，这些查询：
 
+```sql
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND CounterID = 34
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND (CounterID = 34 OR CounterID = 42)
 SELECT count() FROM table WHERE ((EventDate >= toDate('2014-01-01') AND EventDate <= toDate('2014-01-31')) OR EventDate = toDate('2014-05-01')) AND CounterID IN (101500, 731962, 160656) AND (CounterID = 101500 OR EventDate != toDate('2014-05-01'))
+```
 
 ClickHouse 会依据 `primary key` 索引剪掉不符合的数据，依据按月分区的分区键剪掉那些不包含符合数据的分区。
 
@@ -227,61 +276,358 @@ ClickHouse 会依据 `primary key` 索引剪掉不符合的数据，依据按月
 
 下面这个例子中，不会使用索引。
 
+```sql
 SELECT count() FROM table WHERE CounterID = 34 OR URL LIKE '%upyachka%'
+```
 
-要检查 ClickHouse 执行一个查询时能否使用索引，可设置  [force_index_by_date](https://clickhouse.yandex/docs/zh/single/#settings-force_index_by_date)  和  [force_primary_key](https://clickhouse.yandex/docs/zh/single/#../settings/settings/) 。
+要检查 ClickHouse 执行一个查询时能否使用索引，可设置  `force_index_by_date` 和  `force_primary_key`, 运维部分。
 
-按月分区的分区键是只能读取包含适当范围日期的数据块。这种情况下，数据块会包含很多天（最多整月）的数据。在块中，数据按 `primary key` 排序， `primary key` 第一列可能不包含日期。因此，仅使用日期而没有带 `primary key` 前缀条件的查询将会导致读取超过这个日期范围。
+按月分区的分区键是只能读取包含适当范围日期的数据块。这种情况下，数据块会包含很多天（最多整月）的数据。
+- 在块中，数据按 `primary key` 排序， `primary key` 第一列可能不包含日期。
+- 因此，仅使用日期而没有带 `primary key` 前缀条件的查询将会导致读取超过这个日期范围。
 
-#### 跳数索引（分段汇总索引，实验性的）[¶](https://clickhouse.yandex/docs/zh/single/#tiao-shu-suo-yin-fen-duan-hui-zong-suo-yin-shi-yan-xing-de "Permanent link")
+#### Use of Index for Partially-Monotonic Primary Keys
+例如，考虑一个月中的几天。它们形成一个月的[`monotonic sequence`](https://en.wikipedia.org/wiki/Monotonic_function)，但在更长的时间内不单调。这是部分单调的序列。如果用户使用部分单调的主键创建表，则ClickHouse将照常创建稀疏索引。当用户从这种表中选择数据时，`ClickHouse` 将分析查询条件。如果用户希望在索引的两个标记之间获取数据并且这两个标记均在一个月之内，则ClickHouse可以在这种特殊情况下使用索引，因为它可以计算查询参数与索引标记之间的距离。
+
+如果查询参数范围内主键的值不表示`monotonic sequence`，则 `ClickHouse` 无法使用索引。在这种情况下，`ClickHouse` 使用完整扫描方法。
+
+`ClickHouse` 不仅在每月的某几天序列中使用此逻辑，而且还在表示部分 `monotonic sequence` 的任何主键中使用此逻辑。
+
+#### Data Skipping Indexes (Experimental)
 
 需要设置  `allow_experimental_data_skipping_indices`  为 1 才能使用此索引。（执行  `SET allow_experimental_data_skipping_indices = 1`）。
 
 此索引在  `CREATE`  语句的列部分里定义。
 
+```
 INDEX index_name expr TYPE type(...) GRANULARITY granularity_value
+```
 
-`*MergeTree`  系列的表都能指定跳数索引。
+`*MergeTree` 系列的表都能指定跳数索引。
 
-这些索引是由数据块按粒度分割后的每部分在指定表达式上汇总信息  `granularity_value`  组成（粒度大小用`table engines`里  `index_granularity`  的指定）。 这些汇总信息有助于用  `where`  语句跳过大片不满足的数据，从而减少  `SELECT`  查询从磁盘读取的数据量，
+这些索引是由数据块按粒度分割后的每部分在指定表达式上汇总信息  `granularity_value`  组成（粒度大小用`table engines`里  `index_granularity`  的指定）。 
 
-示例
+这些汇总信息有助于用 `where` 语句跳过大片不满足的数据，从而减少 `SELECT` 查询从磁盘读取的数据量
 
+**Example**
+
+```sql
 CREATE TABLE table_name
 (
-u64 UInt64,
-i32 Int32,
-s String,
-...
-INDEX a (u64 _ i32, s) TYPE minmax GRANULARITY 3,
-INDEX b (u64 _ length(s)) TYPE set(1000) GRANULARITY 4
+    u64 UInt64,
+    i32 Int32,
+    s String,
+    ...
+    INDEX a (u64 * i32, s) TYPE minmax GRANULARITY 3,
+    INDEX b (u64 * length(s)) TYPE set(1000) GRANULARITY 4
 ) ENGINE = MergeTree()
 ...
+```
 
 上例中的索引能让 ClickHouse 执行下面这些查询时减少读取数据量。
 
+```sql
 SELECT count() FROM table WHERE s < 'z'
-SELECT count() FROM table WHERE u64 _ i32 == 10 AND u64 _ length(s) >= 1234
+SELECT count() FROM table WHERE u64 * i32 == 10 AND u64 * length(s) >= 1234
+```
 
-##### 索引的可用类型[¶](https://clickhouse.yandex/docs/zh/single/#suo-yin-de-ke-yong-lei-xing "Permanent link")
+**Available Types of indices**
 
 - `minmax`  存储指定表达式的极值（如果表达式是  `tuple` ，则存储  `tuple`  中每个元素的极值），这些信息用于跳过数据块，类似 `primary key` 。
 
 - `set(max_rows)`  存储指定表达式的惟一值（不超过  `max_rows`  个，`max_rows=0`  则表示『无限制』）。这些信息可用于检查  `WHERE`  表达式是否满足某个数据块。
 
-- `ngrambf_v1(n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)`  存储包含数据块中所有 n 元短语的  [布隆过滤器](https://en.wikipedia.org/wiki/Bloom_filter) 。只可用在字符串上。 可用于优化  `equals` ， `like`  和  `in`  表达式的性能。 `n` \-\- 短语长度。 `size_of_bloom_filter_in_bytes` \-\- 布隆过滤器大小，单位字节。（因为压缩得好，可以指定比较大的值，如 256 或 512）。 `number_of_hash_functions` \-\- 布隆过滤器中使用的 hash 函数的个数。 `random_seed` \-\- hash 函数的随机种子。
+- `ngrambf_v1(n, size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)`  
+  - 存储包含数据块中所有 n 元短语的  [`Bloom filter`](https://en.wikipedia.org/wiki/Bloom_filter) 。
+  - 只可用在字符串上。 可用于优化  `equals` ， `like`  和  `in`  表达式的性能。 
+    
+    - `n` : 短语长度。 
+    - `size_of_bloom_filter_in_bytes`: `Bloom filter`大小，单位字节。（因为压缩得好，可以指定比较大的值，如 `256` 或 `512`）。
+    -  `number_of_hash_functions` : `Bloom filter` 中使用的 hash 函数的个数。
+    -  `random_seed` : hash 函数的随机种子。
 
-- `tokenbf_v1(size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)`  跟  `ngrambf_v1`  类似，不同于 ngrams 存储字符串指定长度的所有片段。它只存储被非字母数据字符分割的片段。
+- `tokenbf_v1(size_of_bloom_filter_in_bytes, number_of_hash_functions, random_seed)`  
+  - 跟  `ngrambf_v1`  类似，它只存储被非字母数据字符分割的`parts`。
 
-INDEX sample_index (u64 _ length(s)) TYPE minmax GRANULARITY 4
-INDEX sample_index2 (u64 _ length(str), i32 + f64 \* 100, date, str) TYPE set(100) GRANULARITY 4
+- `bloom_filter([false_positive])`
+  - 为指定的列存储 `Bloom filter`。
+  - 可选 `false_positive` 参数是从过滤器接收到错误肯定响应的可能性。可能的值：`（0，1）`。默认值：`0.025`。
+  
+  - 支持的数据类型：
+    - `Int*`
+    - `UInt*`
+    - `Float*`
+    - `Enum`
+    - `Date`
+    - `DateTime`
+    - `String`
+    - `FixedString`
+    - `Array`
+    - `LowCardinality`
+    - `Nullable`
+  
+  以下函数可以使用它：`equals`，`notEquals`，`in`，`notIn`和`has`。
+  
+```sql
+INDEX sample_index (u64 * length(s)) TYPE minmax GRANULARITY 4
+INDEX sample_index2 (u64 * length(str), i32 + f64 * 100, date, str) TYPE set(100) GRANULARITY 4
 INDEX sample_index3 (lower(str), str) TYPE ngrambf_v1(3, 256, 2, 0) GRANULARITY 4
+```
 
-### 并发数据访问[¶](https://clickhouse.yandex/docs/zh/single/#bing-fa-shu-ju-fang-wen "Permanent link")
+**Functions Support**
 
-应对表的并发访问，我们使用多版本机制。换言之，当同时读和更新表时，数据从当前查询到的一组片段中读取。没有冗长的的锁。插入不会阻碍读取。
+`WHERE`子句中的条件包含使用列操作的函数的调用。如果列是索引的一部分，则 `ClickHouse` 在执行功能时会尝试使用此索引。`ClickHouse` 支持使用索引的功能的不同子集。
+
+该set索引可以与所有函数一起使用。下表显示了其他索引的功能子集。
+
+![support_function_for_data_skip_index.png](../images/support_function_for_data_skip_index.png)
+
+常量参数小于`ngram`大小的函数不能使用`ngrambf_v1`查询优化。
+
+`Bloom Filter`可以有 `false positive` 匹配，所以 当函数预期为 `false` 时，`ngrambf_v1`，`tokenbf_v1` 和 `bloom_filter` 索引不能用于优化查询，例如：
+
+- `Can be optimized`：
+ - s LIKE '%test%'
+ - NOT s NOT LIKE '%test%'
+ - s = 1
+ - NOT s != 1
+ - startsWith(s, 'test')
+
+- `Can't be optimized`：
+  - NOT s LIKE '%test%'
+  - s NOT LIKE '%test%'
+  - NOT s = 1
+  - s != 1
+  - NOT startsWith(s, 'test')
+
+### Concurrent Data Access
+
+应对表的并发访问，我们使用多版本机制。换言之，当同时读和更新表时，数据从当前查询到的一组`parts`中读取。没有冗长的的锁。插入不会阻碍读取。
 
 对表的读操作是自动并行的。
+
+### TTL for Columns and Tables
+
+确定`value`的`lifetime`。
+
+可以为整个表和每个单独的列设置 `TTL` 从句。如果同时设置了两种 `TTL`，则 `ClickHouse` 将使用更早时间的`TTL`配置。
+
+该表必须在 `Date` 或 `DateTime` 数据类型的列上定义数据的生存期。如：
+
+```
+TTL time_column
+TTL time_column + interval
+```
+
+需要使用 `time interval` 操作，定义 `interval`:
+
+```
+TTL date_time + INTERVAL 1 MONTH
+TTL date_time + INTERVAL 15 HOUR
+```
+
+*Column TTL**
+
+当列中的值过期时，`ClickHouse` 会将其替换为列数据类型的默认值。如果数据部分中的所有列值均已过期，则 ClickHouse 将从文件系统中的数据部分删除此列。
+
+该`TTL`子句不能用于`key column`。
+
+例子：
+
+用 TTL 创建表
+
+```sql
+CREATE TABLE example_table 
+(
+    d DateTime,
+    a Int TTL d + INTERVAL 1 MONTH,
+    b Int TTL d + INTERVAL 1 MONTH,
+    c String
+)
+ENGINE = MergeTree
+PARTITION BY toYYYYMM(d)
+ORDER BY d;
+```
+
+将 TTL 添加到现有表的列中
+
+```sql
+ALTER TABLE example_table
+    MODIFY COLUMN
+    c String TTL d + INTERVAL 1 DAY;
+```
+
+更改列的 TTL
+
+```sql
+ALTER TABLE example_table
+    MODIFY COLUMN
+    c String TTL d + INTERVAL 1 MONTH;
+```
+
+**Table TTL**
+
+当 `table` 中的数据过期时，`ClickHouse` 会删除所有对应的行。
+
+例子：
+
+用 TTL 创建表
+
+```sql
+CREATE TABLE example_table 
+(
+    d DateTime,
+    a Int
+)
+ENGINE = MergeTree
+PARTITION BY toYYYYMM(d)
+ORDER BY d
+TTL d + INTERVAL 1 MONTH;
+```
+
+改变表的 TTL
+
+```sql
+CREATE TABLE example_table 
+(
+    d DateTime,
+    a Int
+)
+ENGINE = MergeTree
+PARTITION BY toYYYYMM(d)
+ORDER BY d
+TTL d + INTERVAL 1 MONTH;
+```
+
+**Removing Data**
+
+当 ClickHouse 合并数据部分时，将删除 TTL 过期的数据。
+
+当 ClickHouse 看到数据已过期时，它将执行计划外合并。要控制此类合并的频率，可以设置[merge_with_ttl_timeout](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#mergetree_setting-merge_with_ttl_timeout)。如果该值太低，它将执行许多计划外合并，这可能会消耗大量资源。
+
+如果`SELECT`在合并之间执行查询，则可能会获得过期的数据。为了避免这种情况，请在之前使用[OPTIMIZE](https://clickhouse.yandex/docs/en/query_language/misc/#misc_operations-optimize)查询`SELECT`。
+
+## 使用多个块设备进行数据存储[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#table_engine-mergetree-multiple-volumes "永久链接")
+
+### 一般[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#general "永久链接")
+
+MergeTree 系列的表能够将其数据存储在多个块设备上，例如，当某个表的数据隐式拆分为“热”和“冷”时，这可能会很有用。定期请求最新数据，但只需要少量空间。相反，很少要求提供详尽的历史数据。如果有多个磁盘可用，则“热”数据可能位于快速磁盘（NVMe SSD 甚至是内存）中，而“冷”数据可能位于相对较慢的磁盘（HDD）上。
+
+部分是 MergeTree 表的最小可移动单位。属于一部分的数据存储在一张磁盘上。可以在后台的磁盘之间（根据用户设置）以及通过[ALTER](https://clickhouse.yandex/docs/en/query_language/alter/#alter_move-partition)查询来移动部件。
+
+### 条款[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#terms "永久链接")
+
+- 磁盘—挂载到文件系统的块设备。
+- 默认磁盘-包含在`<path>`标签中指定的路径的磁盘`config.xml`。
+- 卷—一组相等的有序磁盘（类似于[JBOD](https://en.wikipedia.org/wiki/Non-RAID_drive_architectures)）。
+- 存储策略-许多卷以及在它们之间移动数据的规则。
+
+可以在系统表[system.storage_policies](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-storage_policies)和[system.disks 中](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-disks)找到提供给所描述实体的名称。可以将存储策略名称用作 MergeTree 系列表的参数。
+
+### 配置[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#table_engine-mergetree-multiple-volumes_configure "永久链接")
+
+磁盘，卷和存储策略应`<storage_configuration>`在主文件中`config.xml`或`config.d`目录中不同文件的标记内声明。配置文件中的此部分具有以下结构：
+
+<disks> 
+    <fast_disk>  <！-磁盘名称-\> 
+        <path> / mnt / fast_ssd / clickhouse </ path> 
+    </ fast_disk> 
+    <disk1> 
+        <path> / mnt / hdd1 / clickhouse </ path> 
+        <keep\_free\_space_bytes > 10485760 </ keep\_free\_space_bytes> _
+     </ disk1> 
+    <disk2> 
+        <path> / mnt / hdd2 / clickhouse </ path> 
+        <keep\_free\_space_bytes> 10485760 </ keep\_free\_space_bytes> _
+     </ disk2>
+ 
+    ... </ disks>
+
+哪里
+
+- 磁盘名称作为标记名称给出。
+- `path`—服务器将用来存储数据（`data`和`shadow`文件夹）的路径应以'/'结尾。
+- `keep_free_space_bytes` —要保留的可用磁盘空间量。
+
+磁盘定义的顺序并不重要。
+
+存储策略配置：
+
+<policies> 
+    <hdd\_in\_order>  <！-策略名称-\> 
+        <volumes> 
+            <single>  <！-卷名-\> 
+                <disk> disk1 </ disk> 
+                <disk> disk2 </ disk> 
+            </ single> 
+        </体积\> 
+    </ hdd\_in\_order>
+
+    <moving\_from\_ssd\_to\_hdd>
+        <卷\>
+            <热\>
+                <磁盘> fast_ssd </磁盘\>
+                <max\_data\_part\_size\_bytes> 1073741824 </ max\_data\_part\_size\_bytes>
+            </热\>
+            <冷\>
+                <磁盘>磁盘1 </磁盘\>
+            </感冒\>
+        </ volumes>
+        <move_factor> 0.2 </ move_factor>
+    </ moving\_from\_ssd\_to\_hdd>
+
+</ policies>
+
+哪里
+
+- 卷和存储策略名称以标签名称形式给出。
+- `disk` —卷中的磁盘。
+- `max_data_part_size_bytes` —可以存储在任何卷的磁盘上的部件的最大大小。
+- `move_factor` —当可用空间量小于该因子时，数据将自动开始在下一个卷（如果有）上移动（默认值为 0.1）。
+
+在给定的示例中，该`hdd_in_order`策略实现了[循环](https://en.wikipedia.org/wiki/Round-robin_scheduling)方法。由于该策略仅定义一个卷（`single`），因此数据以循环顺序存储在其所有磁盘上。如果有多个类似的磁盘安装到系统，则此策略将非常有用。如果有不同的磁盘，则`moving_from_ssd_to_hdd`可以使用该策略。该卷`hot`由一个 SSD 磁盘（`fast_ssd`）组成，该卷上可以存储的部件的最大大小为 1GB。所有大小大于 1GB 的部件将直接存储在`cold`包含 HDD 磁盘的卷上`disk1`。同样，一旦磁盘的`fast_ssd`容量超过 80％，数据将`disk1`通过后台进程传输到。
+
+存储策略中卷枚举的顺序很重要。一旦一个卷被过度填充，数据将移至下一个。磁盘枚举的顺序也很重要，因为数据是依次存储在磁盘上的。
+
+创建表时，可以将配置的存储策略之一应用于表：
+
+CREATE TABLE table_with_non_default_policy （
+EVENTDATE 日期，
+订单 ID UINT64 ，
+BannerID UINT64 ，
+SearchPhrase 字符串
+） ENGINE = MergeTree
+ORDER BY （订单 ID ， BannerID ）
+PARTITION BY toYYYYMM （EVENTDATE ）
+设置 storage_policy = 'moving_from_ssd_to_hdd'
+
+该`default`存储策略意味着使用只有一个卷，其中仅由一个在给定的磁盘`<path>`。创建表后，将无法更改其存储策略。
+
+### 细节[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#details "永久链接")
+
+对于 MergeTree 表，数据以不同的方式进入磁盘：
+
+- 作为插入（`INSERT`查询）的结果。
+- 在背景合并和[突变](https://clickhouse.yandex/docs/en/query_language/alter/#alter-mutations)期间。
+- 从另一个副本下载时。
+- 由于分区冻结而导致[ALTER TABLE ... FREEZE PARTITION](https://clickhouse.yandex/docs/en/query_language/alter/#alter_freeze-partition)。
+
+在所有这些情况下，除了突变和分区冻结外，根据给定的存储策略，一部分存储在卷和磁盘上：
+
+1.  选择具有足够磁盘空间来存储部件（`unreserved_space > current_part_size`）并允许存储给定大小（`max_data_part_size_bytes > current_part_size`）的部件的第一个卷（按定义顺序）。
+2.  在该卷中，选择该磁盘之后的磁盘，该磁盘用于存储先前的数据块，并且其可用空间大于部件大小（`unreserved_space - keep_free_space_bytes > current_part_size`）。
+
+在幕后，变异和分区冻结利用[硬链接](https://en.wikipedia.org/wiki/Hard_link)。不支持不同磁盘之间的硬链接，因此在这种情况下，生成的零件与初始磁盘存储在同一磁盘上。
+
+在背景中，部分被卷之间的自由空间（的量的基础上移动`move_factor`参数）根据卷在配置文件中声明的顺序。数据永远不会从最后一个传输到第一个。可以使用系统表[system.part_log](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-part-log)（字段`type = MOVE_PART`）和[system.parts](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-parts)（字段`path`和`disk`）来监视背景移动。同样，可以在服务器日志中找到详细信息。
+
+用户可以使用查询[ALTER TABLE ... MOVE PART | PARTITION ... TO VOLUME | DISK ...](https://clickhouse.yandex/docs/en/query_language/alter/#alter_move-partition)来强制将一部分或分区从一个卷移动到另一个卷，所有对后台操作的限制都已考虑在内。该查询将自行启动移动，而无需等待后台操作完成。如果没有足够的可用空间或不满足任何要求的条件，用户将收到错误消息。
+
+移动数据不会干扰数据复制。因此，可以为不同副本上的同一表指定不同的存储策略。
+
+背景合并和突变完成后，仅在一定时间（`old_parts_lifetime`）后才删除旧零件。在此期间，它们不会移至其他卷或磁盘。因此，在最终卸下这些部件之前，仍要考虑它们以评估占用的磁盘空间。
+
+
 
 ## 数据副本[¶](https://clickhouse.yandex/docs/zh/single/#table_engines-replication "Permanent link")
 
@@ -417,11 +763,11 @@ _HINT_: you could add a database name in front of `table_name` as well. E.g. 
 
 连接到 ZooKeeper 后，系统会检查本地文件系统中的数据集是否与预期的数据集（ ZooKeeper 存储此信息）一致。如果存在轻微的不一致，系统会通过与副本同步数据来解决。
 
-如果系统检测到损坏的数据片段（文件大小错误）或无法识别的片段（写入文件系统但未记录在 ZooKeeper 中的部分），则会把它们移动到 'detached' 子目录（不会删除）。而副本中其他任何缺少的但正常数据片段都会被复制同步。
+如果系统检测到损坏的数据`parts`（文件大小错误）或无法识别的`parts`（写入文件系统但未记录在 ZooKeeper 中的部分），则会把它们移动到 'detached' 子目录（不会删除）。而副本中其他任何缺少的但正常数据`parts`都会被复制同步。
 
 注意，ClickHouse 不会执行任何破坏性操作，例如自动删除大量数据。
 
-当服务器启动（或与 ZooKeeper 建立新会话）时，它只检查所有文件的数量和大小。 如果文件大小一致但中间某处已有字节被修改过，不会立即被检测到，只有在尝试读取  `SELECT`  查询的数据时才会检测到。该查询会引发校验和不匹配或压缩块大小不一致的异常。这种情况下，数据片段会添加到验证队列中，并在必要时从其他副本中复制。
+当服务器启动（或与 ZooKeeper 建立新会话）时，它只检查所有文件的数量和大小。 如果文件大小一致但中间某处已有字节被修改过，不会立即被检测到，只有在尝试读取  `SELECT`  查询的数据时才会检测到。该查询会引发校验和不匹配或压缩块大小不一致的异常。这种情况下，数据`parts`会添加到验证队列中，并在必要时从其他副本中复制。
 
 如果本地数据集与预期数据的差异太大，则会触发安全机制。服务器在日志中记录此内容并拒绝启动。这种情况很可能是配置错误，例如，一个分片上的副本意外配置为别的分片上的副本。然而，此机制的阈值设置得相当低，在正常故障恢复期间可能会出现这种情况。在这种情况下，数据恢复则是半自动模式，通过用户主动操作触发。
 
@@ -453,7 +799,7 @@ sudo -u clickhouse touch /var/lib/clickhouse/flags/force_restore_data
 
 如果各个副本上的数据不一致，则首先对其进行同步，或者除保留的一个副本外，删除其他所有副本上的数据。
 
-重命名现有的 MergeTree 表，然后使用旧名称创建  `ReplicatedMergeTree`  表。 将数据从旧表移动到新表（`/var/lib/clickhouse/data/db_name/table_name/`）目录内的 'detached' 目录中。 然后在其中一个副本上运行`ALTER TABLE ATTACH PARTITION`，将这些数据片段添加到工作集中。
+重命名现有的 MergeTree 表，然后使用旧名称创建  `ReplicatedMergeTree`  表。 将数据从旧表移动到新表（`/var/lib/clickhouse/data/db_name/table_name/`）目录内的 'detached' 目录中。 然后在其中一个副本上运行`ALTER TABLE ATTACH PARTITION`，将这些数据`parts`添加到工作集中。
 
 ### ReplicatedMergeTree 转换为 MergeTree[¶](https://clickhouse.yandex/docs/zh/single/#replicatedmergetree-zhuan-huan-wei-mergetree "Permanent link")
 
@@ -496,13 +842,13 @@ ORDER BY (CounterID, StartDate, intHash32(UserID));
 
 上例中，我们设置按一周内的事件类型分区。
 
-新数据插入到表中时，这些数据会存储为按 `primary key` 排序的新片段（块）。插入后 10-15 分钟，同一分区的各个片段会合并为一整个片段。
+新数据插入到表中时，这些数据会存储为按 `primary key` 排序的新`parts`（块）。插入后 10-15 分钟，同一分区的各个`parts`会合并为一整个`parts`。
 
 注意
 
-那些有相同分区表达式值的数据片段才会合并。这意味着  **你不应该用太精细的分区方案**（超过一千个分区）。否则，会因为文件系统中的文件数量和需要找开的文件描述符过多，导致  `SELECT`  查询效率不佳。
+那些有相同分区表达式值的数据`parts`才会合并。这意味着  **你不应该用太精细的分区方案**（超过一千个分区）。否则，会因为文件系统中的文件数量和需要找开的文件描述符过多，导致  `SELECT`  查询效率不佳。
 
-可以通过  [system.parts](https://clickhouse.yandex/docs/zh/single/#system_tables-parts)  表查看表片段和分区信息。例如，假设我们有一个  `visits`  表，按月分区。对  `system.parts`  表执行  `SELECT`：
+可以通过  [system.parts](https://clickhouse.yandex/docs/zh/single/#system_tables-parts)  表查看表`parts`和分区信息。例如，假设我们有一个  `visits`  表，按月分区。对  `system.parts`  表执行  `SELECT`：
 
 SELECT
 partition,
@@ -523,7 +869,7 @@ WHERE table = 'visits'
 
 `partition`  列存储分区的名称。此示例中有两个分区：`201901`  和  `201902`。在  [ALTER ... PARTITION](https://clickhouse.yandex/docs/zh/single/#alter_manipulations-with-partitions)  语句中你可以使用该列值来指定分区名称。
 
-`name`  列为分区中数据片段的名称。在  [ALTER ATTACH PART](https://clickhouse.yandex/docs/zh/single/#alter_attach-partition)  语句中你可以使用此列值中来指定片段名称。
+`name`  列为分区中数据`parts`的名称。在  [ALTER ATTACH PART](https://clickhouse.yandex/docs/zh/single/#alter_attach-partition)  语句中你可以使用此列值中来指定`parts`名称。
 
 这里我们拆解下第一部分的名称：`201901_1_3_1`：
 
@@ -534,11 +880,11 @@ WHERE table = 'visits'
 
 注意
 
-旧类型表的片段名称为：`20190117_20190123_2_2_0`（最小日期 \- 最大日期 \- 最小块编号 \- 最大块编号 \- 块级别）。
+旧类型表的`parts`名称为：`20190117_20190123_2_2_0`（最小日期 \- 最大日期 \- 最小块编号 \- 最大块编号 \- 块级别）。
 
-`active`  列为片段状态。`1`  激活状态；`0`  非激活状态。非激活片段是那些在合并到较大片段之后剩余的源数据片段。损坏的数据片段也表示为非活动状态。
+`active`  列为`parts`状态。`1`  激活状态；`0`  非激活状态。非激活`parts`是那些在合并到较大`parts`之后剩余的源数据`parts`。损坏的数据`parts`也表示为非活动状态。
 
-正如在示例中所看到的，同一分区中有几个独立的片段（例如，`201901_1_3_1`和`201901_1_9_2`）。这意味着这些片段尚未合并。ClickHouse 大约在插入后 15 分钟定期报告合并操作，合并插入的数据片段。此外，你也可以使用  [OPTIMIZE](https://clickhouse.yandex/docs/zh/single/#misc_operations-optimize)  语句直接执行合并。例：
+正如在示例中所看到的，同一分区中有几个独立的`parts`（例如，`201901_1_3_1`和`201901_1_9_2`）。这意味着这些`parts`尚未合并。ClickHouse 大约在插入后 15 分钟定期报告合并操作，合并插入的数据`parts`。此外，你也可以使用  [OPTIMIZE](https://clickhouse.yandex/docs/zh/single/#misc_operations-optimize)  语句直接执行合并。例：
 
 OPTIMIZE TABLE visits PARTITION 201902;
 
@@ -553,9 +899,9 @@ OPTIMIZE TABLE visits PARTITION 201902;
 │ 201902 │ 201902_11_11_0 │ 0 │
 └───────────┴────────────────┴────────┘
 
-非激活片段会在合并后的 10 分钟左右删除。
+非激活`parts`会在合并后的 10 分钟左右删除。
 
-查看片段和分区信息的另一种方法是进入表的目录：`/var/lib/clickhouse/data/<database>/<table>/`。例如：
+查看`parts`和分区信息的另一种方法是进入表的目录：`/var/lib/clickhouse/data/<database>/<table>/`。例如：
 
 dev:/var/lib/clickhouse/data/default/visits\$ ls -l
 total 40
@@ -569,13 +915,13 @@ drwxr-xr-x 2 clickhouse clickhouse 4096 Feb 5 16:19 201902_4_11_2
 drwxr-xr-x 2 clickhouse clickhouse 4096 Feb 5 12:09 201902_4_6_1
 drwxr-xr-x 2 clickhouse clickhouse 4096 Feb 1 16:48 detached
 
-文件夹 '201901_1_1_0'，'201901_1_7_1' 等是片段的目录。每个片段都与一个对应的分区相关，并且只包含这个月的数据（本例中的表按月分区）。
+文件夹 '201901_1_1_0'，'201901_1_7_1' 等是`parts`的目录。每个`parts`都与一个对应的分区相关，并且只包含这个月的数据（本例中的表按月分区）。
 
-`detached`  目录存放着使用  [DETACH](https://clickhouse.yandex/docs/zh/single/#alter_detach-partition)  语句从表中分离的片段。损坏的片段也会移到该目录，而不是删除。服务器不使用`detached`目录中的片段。可以随时添加，删除或修改此目录中的数据 – 在运行  [ATTACH](https://clickhouse.yandex/docs/zh/single/#alter_attach-partition)  语句前，服务器不会感知到。
+`detached`  目录存放着使用  [DETACH](https://clickhouse.yandex/docs/zh/single/#alter_detach-partition)  语句从表中分离的`parts`。损坏的`parts`也会移到该目录，而不是删除。服务器不使用`detached`目录中的`parts`。可以随时添加，删除或修改此目录中的数据 – 在运行  [ATTACH](https://clickhouse.yandex/docs/zh/single/#alter_attach-partition)  语句前，服务器不会感知到。
 
-注意，在操作服务器时，你不能手动更改文件系统上的片段集或其数据，因为服务器不会感知到这些修改。对于非复制表，可以在服务器停止时执行这些操作，但不建议这样做。对于复制表，在任何情况下都不要更改片段文件。
+注意，在操作服务器时，你不能手动更改文件系统上的`parts`集或其数据，因为服务器不会感知到这些修改。对于非复制表，可以在服务器停止时执行这些操作，但不建议这样做。对于复制表，在任何情况下都不要更改`parts`文件。
 
-ClickHouse 支持对分区执行这些操作：删除分区，从一个表复制到另一个表，或创建备份。了解分区的所有操作，请参阅  [分区和片段的操作](https://clickhouse.yandex/docs/zh/single/#alter_manipulations-with-partitions)  一节。
+ClickHouse 支持对分区执行这些操作：删除分区，从一个表复制到另一个表，或创建备份。了解分区的所有操作，请参阅  [分区和`parts`的操作](https://clickhouse.yandex/docs/zh/single/#alter_manipulations-with-partitions)  一节。
 
 ## ReplacingMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#replacingmergetree "Permanent link")
 
@@ -614,7 +960,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 ## SummingMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#summingmergetree "Permanent link")
 
-该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)。区别在于，当合并  `SummingMergeTree`  表的数据片段时，ClickHouse 会把所有具有相同 `primary key` 的行合并为一行，该行包含了被合并的行中具有数值数据类型的列的汇总值。如果 `primary key` 的组合方式使得单个键值对应于大量的行，则可以显著的减少存储空间并加快数据查询的速度。
+该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)。区别在于，当合并  `SummingMergeTree`  表的数据`parts`时，ClickHouse 会把所有具有相同 `primary key` 的行合并为一行，该行包含了被合并的行中具有数值数据类型的列的汇总值。如果 `primary key` 的组合方式使得单个键值对应于大量的行，则可以显著的减少存储空间并加快数据查询的速度。
 
 我们推荐将该引擎和  `MergeTree`  一起使用。例如，在准备做报告的时候，将完整的数据存储在  `MergeTree`  表中，并且使用  `SummingMergeTree`  来存储聚合数据。这种方法可以使你避免因为使用不正确的 `primary key` 组合方式而丢失有价值的数据。
 
@@ -672,9 +1018,9 @@ SELECT key, sum(value) FROM summtt GROUP BY key
 
 ### 数据处理[¶](https://clickhouse.yandex/docs/zh/single/#data-processing "Permanent link")
 
-当数据被插入到表中时，他们将被原样保存。ClickHouse 定期合并插入的数据片段，并在这个时候对所有具有相同 `primary key` 的行中的列进行汇总，将这些行替换为包含汇总数据的一行记录。
+当数据被插入到表中时，他们将被原样保存。ClickHouse 定期合并插入的数据`parts`，并在这个时候对所有具有相同 `primary key` 的行中的列进行汇总，将这些行替换为包含汇总数据的一行记录。
 
-ClickHouse 会按片段合并数据，以至于不同的数据片段中会包含具有相同 `primary key` 的行，即单个汇总片段将会是不完整的。因此，聚合函数  [sum()](https://clickhouse.yandex/docs/zh/single/#agg_function-sum)  和  `GROUP BY`  子句应该在（`SELECT`）查询语句中被使用，如上文中的例子所述。
+ClickHouse 会按`parts`合并数据，以至于不同的数据`parts`中会包含具有相同 `primary key` 的行，即单个汇总`parts`将会是不完整的。因此，聚合函数  [sum()](https://clickhouse.yandex/docs/zh/single/#agg_function-sum)  和  `GROUP BY`  子句应该在（`SELECT`）查询语句中被使用，如上文中的例子所述。
 
 #### 汇总的通用规则[¶](https://clickhouse.yandex/docs/zh/single/#hui-zong-de-tong-yong-gui-ze "Permanent link")
 
@@ -714,7 +1060,7 @@ ClickHouse 会按片段合并数据，以至于不同的数据片段中会包含
 
 ## AggregatingMergeTree[¶](https://clickhouse.yandex/docs/zh/single/#aggregatingmergetree "Permanent link")
 
-该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)，并改变了数据片段的合并逻辑。 ClickHouse 会将相同 `primary key` 的所有行（在一个数据片段内）替换为单个存储一系列聚合函数状态的行。
+该引擎继承自  [MergeTree](https://clickhouse.yandex/docs/zh/single/#mergetree/)，并改变了数据`parts`的合并逻辑。 ClickHouse 会将相同 `primary key` 的所有行（在一个数据`parts`内）替换为单个存储一系列聚合函数状态的行。
 
 可以使用  `AggregatingMergeTree`  表来做增量数据统计聚合，包括物化视图的数据聚合。
 
@@ -846,7 +1192,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 │ 4324182021466249494 │ 5 │ 146 │ -1 │
 └─────────────────────┴───────────┴──────────┴──────┘
 
-可以在折叠对象的失效（老的）状态的时候被删除。`CollapsingMergeTree`  会在合并数据片段的时候做这件事。
+可以在折叠对象的失效（老的）状态的时候被删除。`CollapsingMergeTree`  会在合并数据`parts`的时候做这件事。
 
 为什么我们每次改变需要 2 行可以阅读[算法](https://clickhouse.yandex/docs/zh/single/#table_engine-collapsingmergetree-collapsing-algorithm)段。
 
@@ -858,7 +1204,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 #### 算法[¶](https://clickhouse.yandex/docs/zh/single/#table_engine-collapsingmergetree-collapsing-algorithm "Permanent link")
 
-当 ClickHouse 合并数据片段时，每组具有相同 `primary key` 的连续行被减少到不超过两行，一行  `Sign = 1`（“状态”行），另一行  `Sign = -1` （“取消”行），换句话说，数据项被折叠了。
+当 ClickHouse 合并数据`parts`时，每组具有相同 `primary key` 的连续行被减少到不超过两行，一行  `Sign = 1`（“状态”行），另一行  `Sign = -1` （“取消”行），换句话说，数据项被折叠了。
 
 对每个结果的数据部分 ClickHouse 保存：
 
@@ -871,7 +1217,7 @@ name2 \[type2\] \[DEFAULT|MATERIALIZED|ALIAS expr2\],
 
 因此，折叠不应该改变统计数据的结果。 变化逐渐地被折叠，因此最终几乎每个对象都只剩下了最后的状态。
 
-`Sign`  是必须的因为合并算法不保证所有有相同 `primary key` 的行都会在同一个结果数据片段中，甚至是在同一台物理服务器上。ClickHouse 用多线程来处理  `SELECT`  请求，所以它不能预测结果中行的顺序。如果要从  `CollapsingMergeTree`  表中获取完全“折叠”后的数据，则需要聚合。
+`Sign`  是必须的因为合并算法不保证所有有相同 `primary key` 的行都会在同一个结果数据`parts`中，甚至是在同一台物理服务器上。ClickHouse 用多线程来处理  `SELECT`  请求，所以它不能预测结果中行的顺序。如果要从  `CollapsingMergeTree`  表中获取完全“折叠”后的数据，则需要聚合。
 
 要完成折叠，请使用  `GROUP BY`  子句和用于处理符号的聚合函数编写请求。例如，要计算数量，使用  `sum(Sign)`  而不是  `count()`。要计算某物的总和，使用  `sum(Sign * x)`  而不是  `sum(x)`，并添加  `HAVING sum(Sign) > 0`  子句。
 
@@ -907,7 +1253,7 @@ INSERT INTO UAct VALUES (4324182021466249494, 5, 146, 1)
 
 INSERT INTO UAct VALUES (4324182021466249494, 5, 146, -1),(4324182021466249494, 6, 185, 1)
 
-我们使用两次  `INSERT`  请求来创建两个不同的数据片段。如果我们使用一个请求插入数据，ClickHouse 只会创建一个数据片段且不会执行任何合并操作。
+我们使用两次  `INSERT`  请求来创建两个不同的数据`parts`。如果我们使用一个请求插入数据，ClickHouse 只会创建一个数据`parts`且不会执行任何合并操作。
 
 获取数据：
 
@@ -923,7 +1269,7 @@ SELECT \* FROM UAct
 
 我们看到了什么，哪里有折叠？
 
-通过两个  `INSERT`  请求，我们创建了两个数据片段。`SELECT`  请求在两个线程中被执行，我们得到了随机顺序的行。没有发生折叠是因为还没有合并数据片段。ClickHouse 在一个我们无法预料的未知时刻合并数据片段。
+通过两个  `INSERT`  请求，我们创建了两个数据`parts`。`SELECT`  请求在两个线程中被执行，我们得到了随机顺序的行。没有发生折叠是因为还没有合并数据`parts`。ClickHouse 在一个我们无法预料的未知时刻合并数据`parts`。
 
 因此我们需要聚合：
 
@@ -1376,7 +1722,7 @@ SELECT \* FROM stripe_log_table ORDER BY timestamp
 
 ## TinyLog[¶](https://clickhouse.yandex/docs/zh/single/#tinylog "Permanent link")
 
-最简单的`table engines``，用于将数据存储在磁盘上。每列都存储在单独的压缩文件中。写入时，数据将附加到文件末尾。
+最简单的`table engines`，用于将数据存储在磁盘上。每列都存储在单独的压缩文件中。写入时，数据将附加到文件末尾。
 
 并发数据访问不受任何限制： \- 如果同时从表中读取并在不同的查询中写入，则读取操作将抛出异常 \- 如果同时写入多个查询中的表，则数据将被破坏。
 
