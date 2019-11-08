@@ -138,9 +138,9 @@ CREATE TABLE [IF NOT EXISTS] [db.]table_name [ON CLUSTER cluster]
   - `use_minimalistic_part_header_in_zookeeper`: 数据`parts`头在 `ZooKeeper` 中的存储方式。
     - `use_minimalistic_part_header_in_zookeeper=1` ，·ZooKeeper· 会存储更少的数据。
     - 更多信息参考『服务配置参数』,请看运维相关知识 。
-  - `min_merge_bytes_to_use_direct_io` ： 使用 `direct I/O` 来操作磁盘的合并操作时要求的最小数据量。
+  - `min_merge_bytes_to_use_direct_io` ： 使用 `direct I/O` 来操作`disk`的合并操作时要求的最小数据量。
     - 合并数据`parts`时，`ClickHouse` 会计算要被合并的所有数据的总存储空间。
-    - 如果大小超过了  `min_merge_bytes_to_use_direct_io`  设置的字节数，则 `ClickHouse` 将使用直接 I/O 接口（`O_DIRECT`  选项）对磁盘读写。
+    - 如果大小超过了  `min_merge_bytes_to_use_direct_io`  设置的字节数，则 `ClickHouse` 将使用直接 I/O 接口（`O_DIRECT`  选项）对`disk`读写。
     - 如果设置  `min_merge_bytes_to_use_direct_io = 0` ，则会禁用 `direct I/O`。
     - 默认值：`10 * 1024 * 1024 * 1024`  bytes(`10G`)。
   - `merge_with_ttl_timeout`: 重复与TTL合并之前的最小延迟（以秒为单位）。
@@ -307,7 +307,7 @@ INDEX index_name expr TYPE type(...) GRANULARITY granularity_value
 
 这些索引是由数据块按粒度分割后的每部分在指定表达式上汇总信息  `granularity_value`  组成（粒度大小用`table engines`里  `index_granularity`  的指定）。 
 
-这些汇总信息有助于用 `where` 语句跳过大片不满足的数据，从而减少 `SELECT` 查询从磁盘读取的数据量
+这些汇总信息有助于用 `where` 语句跳过大片不满足的数据，从而减少 `SELECT` 查询从`disk`读取的数据量
 
 **Example**
 
@@ -501,131 +501,140 @@ TTL d + INTERVAL 1 MONTH;
 
 **Removing Data**
 
-当 ClickHouse 合并数据部分时，将删除 TTL 过期的数据。
+- 当 `ClickHouse` 合并数据部分时，将删除 TTL 过期的数据。
 
-当 ClickHouse 看到数据已过期时，它将执行计划外合并。要控制此类合并的频率，可以设置[merge_with_ttl_timeout](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#mergetree_setting-merge_with_ttl_timeout)。如果该值太低，它将执行许多计划外合并，这可能会消耗大量资源。
+- 数据已过期时，它将执行 `off-shedule` 合并。
+  - 要控制此类合并的频率，可以设置 `merge_with_ttl_timeout`(运维部分)。
+  - 如果该值太低，它将执行许多 `off-schedule` 合并，这可能会消耗大量资源。
 
 如果`SELECT`在合并之间执行查询，则可能会获得过期的数据。为了避免这种情况，请在之前使用[OPTIMIZE](https://clickhouse.yandex/docs/en/query_language/misc/#misc_operations-optimize)查询`SELECT`。
 
-## 使用多个块设备进行数据存储[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#table_engine-mergetree-multiple-volumes "永久链接")
+## Using multiple block devices for data storage
 
-### 一般[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#general "永久链接")
+### **General**
 
-MergeTree 系列的表能够将其数据存储在多个块设备上，例如，当某个表的数据隐式拆分为“热”和“冷”时，这可能会很有用。定期请求最新数据，但只需要少量空间。相反，很少要求提供详尽的历史数据。如果有多个磁盘可用，则“热”数据可能位于快速磁盘（NVMe SSD 甚至是内存）中，而“冷”数据可能位于相对较慢的磁盘（HDD）上。
+`MergeTree` 系列的表能够将其数据存储在多个块设备上.
+- 例如，当某个表的数据隐式拆分为 `hot` 和 `cold` 时，这可能会很有用。
+  - 定期请求最新数据，但只需要少量空间。
+  - 相反，很少要求提供详尽的历史数据。如果有多个`disk`可用，则 `hot` 数据可能位于快速`disk`（NVMe SSD 甚至是内存）中，而 `cold` 数据可能位于相对较慢的`disk`（HDD）上。
 
-部分是 MergeTree 表的最小可移动单位。属于一部分的数据存储在一张磁盘上。可以在后台的磁盘之间（根据用户设置）以及通过[ALTER](https://clickhouse.yandex/docs/en/query_language/alter/#alter_move-partition)查询来移动部件。
+- `part` 是 `MergeTree` 表的最小可移动单位。
+  - 在后台的`disk`之间（根据用户设置)
+  - 通过 `ALTER` 查询来移动部件。 
 
-### 条款[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#terms "永久链接")
+### **Terms**
 
-- 磁盘—挂载到文件系统的块设备。
-- 默认磁盘-包含在`<path>`标签中指定的路径的磁盘`config.xml`。
-- 卷—一组相等的有序磁盘（类似于[JBOD](https://en.wikipedia.org/wiki/Non-RAID_drive_architectures)）。
-- 存储策略-许多卷以及在它们之间移动数据的规则。
+-`Disk`: 挂载到文件系统的块设备。
+- `Default disk`-包含在 `<path>` 标签中指定的路径的`disk`config.xml`。
+- `Volume`: 一组相等的有序`disk`（类似于[JBOD](https://en.wikipedia.org/wiki/Non-RAID_drive_architectures)）。
+- `Storage policy`-许多 `Volume` 以及在它们之间移动数据的规则。
 
-可以在系统表[system.storage_policies](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-storage_policies)和[system.disks 中](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-disks)找到提供给所描述实体的名称。可以将存储策略名称用作 MergeTree 系列表的参数。
+可以在系统表, [system.storage_policies](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-storage_policies)和[system.disks](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-disks)找到提供给所描述实体的名称。可以将 `storage policy` 名称用作 `MergeTree` 系列表的参数。
 
-### 配置[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#table_engine-mergetree-multiple-volumes_configure "永久链接")
+### Configuration
 
-磁盘，卷和存储策略应`<storage_configuration>`在主文件中`config.xml`或`config.d`目录中不同文件的标记内声明。配置文件中的此部分具有以下结构：
+`Disk`, `Volume` 和 `Storage policy` 应在 `main` 文件中`config.xml`或`config.d`目录中不同文件的标记`<storage_configuration>`内声明。配置文件中的此部分具有以下结构：
 
-<disks> 
-    <fast_disk>  <！-磁盘名称-\> 
-        <path> / mnt / fast_ssd / clickhouse </ path> 
-    </ fast_disk> 
-    <disk1> 
-        <path> / mnt / hdd1 / clickhouse </ path> 
-        <keep\_free\_space_bytes > 10485760 </ keep\_free\_space_bytes> _
-     </ disk1> 
-    <disk2> 
-        <path> / mnt / hdd2 / clickhouse </ path> 
-        <keep\_free\_space_bytes> 10485760 </ keep\_free\_space_bytes> _
-     </ disk2>
- 
-    ... </ disks>
+```xml
+<disks>
+    <fast_disk> <!-- disk name -->
+        <path>/mnt/fast_ssd/clickhouse</path>
+    </fast_disk>
+    <disk1>
+        <path>/mnt/hdd1/clickhouse</path>
+        <keep_free_space_bytes>10485760</keep_free_space_bytes>_
+    </disk1>
+    <disk2>
+        <path>/mnt/hdd2/clickhouse</path>
+        <keep_free_space_bytes>10485760</keep_free_space_bytes>_
+    </disk2>
 
-哪里
+    ...
+</disks>
+```
 
-- 磁盘名称作为标记名称给出。
-- `path`—服务器将用来存储数据（`data`和`shadow`文件夹）的路径应以'/'结尾。
-- `keep_free_space_bytes` —要保留的可用磁盘空间量。
+- `disk`名称作为标记名称给出。e.g. `fast_disk` 为 `disk`的名称
+- `path`: 服务器将用来存储数据（`data`和`shadow`文件夹）的路径应以 '/' 结尾。
+- `keep_free_space_bytes` —要保留的可用`disk`空间量。
 
-磁盘定义的顺序并不重要。
+`disk`定义的顺序并不重要。
 
-存储策略配置：
+ `storage policy`配置：
 
-<policies> 
-    <hdd\_in\_order>  <！-策略名称-\> 
-        <volumes> 
-            <single>  <！-卷名-\> 
-                <disk> disk1 </ disk> 
-                <disk> disk2 </ disk> 
-            </ single> 
-        </体积\> 
-    </ hdd\_in\_order>
+```xml
+<policies>
+    <hdd_in_order> <!-- policy name -->
+        <volumes>
+            <single> <!-- volume name -->
+                <disk>disk1</disk>
+                <disk>disk2</disk>
+            </single>
+        </volumes>
+    </hdd_in_order>
 
-    <moving\_from\_ssd\_to\_hdd>
-        <卷\>
-            <热\>
-                <磁盘> fast_ssd </磁盘\>
-                <max\_data\_part\_size\_bytes> 1073741824 </ max\_data\_part\_size\_bytes>
-            </热\>
-            <冷\>
-                <磁盘>磁盘1 </磁盘\>
-            </感冒\>
-        </ volumes>
-        <move_factor> 0.2 </ move_factor>
-    </ moving\_from\_ssd\_to\_hdd>
+    <moving_from_ssd_to_hdd>
+        <volumes>
+            <hot>
+                <disk>fast_ssd</disk>
+                <max_data_part_size_bytes>1073741824</max_data_part_size_bytes>
+            </hot>
+            <cold>
+                <disk>disk1</disk>
+            </cold>            
+        </volumes>
+        <move_factor>0.2</move_factor>
+    </moving_from_ssd_to_hdd>
+</policies>
+```
 
-</ policies>
+- `volume` 和 `storage policy` 名称以标签名称形式给出。
+- `disk` : `volume` 中的`disk`。
+- `max_data_part_size_bytes` —可以存储在任何 `volume` 的 `disk` 上的部件的最大大小。
+- `move_factor` —当可用空间量小于该因子时，数据将自动开始在下一个`volume`（如果有）上移动（默认值为 `0.1`）。
 
-哪里
+在给定的示例中，该`hdd_in_order`策略实现了[循环](https://en.wikipedia.org/wiki/Round-robin_scheduling)方法。由于该策略仅定义一个`volume`（`single`），因此数据以循环顺序存储在其所有`disk`上。如果有多个类似的`disk`安装到系统，则此策略将非常有用。如果有不同的`disk`，则`moving_from_ssd_to_hdd`可以使用该策略。该`volume`hot`由一个 SSD `disk`（`fast_ssd`）组成，该`volume`上可以存储的部件的最大大小为 1GB。所有大小大于 1GB 的部件将直接存储在`cold`包含 HDD `disk`的`volume`上`disk1`。同样，一旦`disk`的`fast_ssd`容量超过 80％，数据将`disk1`通过后台进程传输。
 
-- 卷和存储策略名称以标签名称形式给出。
-- `disk` —卷中的磁盘。
-- `max_data_part_size_bytes` —可以存储在任何卷的磁盘上的部件的最大大小。
-- `move_factor` —当可用空间量小于该因子时，数据将自动开始在下一个卷（如果有）上移动（默认值为 0.1）。
+ `storage policy`中`volume`枚举的顺序很重要。一旦一个`volume`被过度填充，数据将移至下一个。`disk`枚举的顺序也很重要，因为数据是依次存储在`disk`上的。
 
-在给定的示例中，该`hdd_in_order`策略实现了[循环](https://en.wikipedia.org/wiki/Round-robin_scheduling)方法。由于该策略仅定义一个卷（`single`），因此数据以循环顺序存储在其所有磁盘上。如果有多个类似的磁盘安装到系统，则此策略将非常有用。如果有不同的磁盘，则`moving_from_ssd_to_hdd`可以使用该策略。该卷`hot`由一个 SSD 磁盘（`fast_ssd`）组成，该卷上可以存储的部件的最大大小为 1GB。所有大小大于 1GB 的部件将直接存储在`cold`包含 HDD 磁盘的卷上`disk1`。同样，一旦磁盘的`fast_ssd`容量超过 80％，数据将`disk1`通过后台进程传输到。
+创建表时，可以将配置的 `storage policy` 之一应用于表：
 
-存储策略中卷枚举的顺序很重要。一旦一个卷被过度填充，数据将移至下一个。磁盘枚举的顺序也很重要，因为数据是依次存储在磁盘上的。
+```sql
+CREATE TABLE table_with_non_default_policy (
+    EventDate Date,
+    OrderID UInt64,
+    BannerID UInt64,
+    SearchPhrase String
+) ENGINE = MergeTree
+ORDER BY (OrderID, BannerID)
+PARTITION BY toYYYYMM(EventDate)
+SETTINGS storage_policy = 'moving_from_ssd_to_hdd'
+```
 
-创建表时，可以将配置的存储策略之一应用于表：
+该`default` `storage policy`意味着使用只有一个`volume`，其中仅由一个在给定的`disk`<path>`。创建表后，将无法更改其 `storage policy`。
 
-CREATE TABLE table_with_non_default_policy （
-EVENTDATE 日期，
-订单 ID UINT64 ，
-BannerID UINT64 ，
-SearchPhrase 字符串
-） ENGINE = MergeTree
-ORDER BY （订单 ID ， BannerID ）
-PARTITION BY toYYYYMM （EVENTDATE ）
-设置 storage_policy = 'moving_from_ssd_to_hdd'
+### Details
 
-该`default`存储策略意味着使用只有一个卷，其中仅由一个在给定的磁盘`<path>`。创建表后，将无法更改其存储策略。
+对于 `MergeTree` 表，数据以不同的方式进入`disk`：
 
-### 细节[¶](https://clickhouse.yandex/docs/en/operations/table_engines/mergetree/#details "永久链接")
-
-对于 MergeTree 表，数据以不同的方式进入磁盘：
-
-- 作为插入（`INSERT`查询）的结果。
-- 在背景合并和[突变](https://clickhouse.yandex/docs/en/query_language/alter/#alter-mutations)期间。
+- 作为插入（`INSERT` 查询）的结果。
+- 在后台合并和`mutation` (见 `Sql Reference/ALTER/Mutations` 部分) 过程中。[官方地址](https://clickhouse.yandex/docs/en/query_language/alter/#alter-mutations)。
 - 从另一个副本下载时。
-- 由于分区冻结而导致[ALTER TABLE ... FREEZE PARTITION](https://clickhouse.yandex/docs/en/query_language/alter/#alter_freeze-partition)。
+- 由于 `partition freezing` 而导致(见 `sql reference/ALTER/FREEZE PARTITION` ) [][ALTER TABLE ... FREEZE PARTITION](https://clickhouse.yandex/docs/en/query_language/alter/#alter_freeze-partition)。
 
-在所有这些情况下，除了突变和分区冻结外，根据给定的存储策略，一部分存储在卷和磁盘上：
+在所有这些情况下，除了`mutation`和`partition frozen`外，根据给定的 `storage policy`，一部分存储在`volume`和`disk`上：
 
-1.  选择具有足够磁盘空间来存储部件（`unreserved_space > current_part_size`）并允许存储给定大小（`max_data_part_size_bytes > current_part_size`）的部件的第一个卷（按定义顺序）。
-2.  在该卷中，选择该磁盘之后的磁盘，该磁盘用于存储先前的数据块，并且其可用空间大于部件大小（`unreserved_space - keep_free_space_bytes > current_part_size`）。
+1.  选择具有足够`disk`空间来存储部件（`unreserved_space > current_part_size`）并允许存储给定大小（`max_data_part_size_bytes > current_part_size`）的部件的第一个`volume`（按定义顺序）。
+2.  在该`volume`中，选择该`disk`之后的`disk`，该`disk`用于存储先前的数据块，并且其可用空间大于部件大小（`unreserved_space - keep_free_space_bytes > current_part_size`）。
 
-在幕后，变异和分区冻结利用[硬链接](https://en.wikipedia.org/wiki/Hard_link)。不支持不同磁盘之间的硬链接，因此在这种情况下，生成的零件与初始磁盘存储在同一磁盘上。
+在幕后，`mutations` 和 `partition frozen` 利用[`hard links`](https://en.wikipedia.org/wiki/Hard_link)。不支持不同`disk`之间的`hard links`，因此在这种情况下，生成的 `parts` 与初始`disk`存储在同一`disk`上。
 
-在背景中，部分被卷之间的自由空间（的量的基础上移动`move_factor`参数）根据卷在配置文件中声明的顺序。数据永远不会从最后一个传输到第一个。可以使用系统表[system.part_log](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-part-log)（字段`type = MOVE_PART`）和[system.parts](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-parts)（字段`path`和`disk`）来监视背景移动。同样，可以在服务器日志中找到详细信息。
+在后台，`part` 被`volume`之间的自由空间（的量的基础上移动`move_factor`参数）根据`volume`在配置文件中声明的顺序。数据永远不会从最后一个传输到第一个。可以使用系统表[system.part_log](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-part-log)（字段`type = MOVE_PART`）和[system.parts](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-parts)（字段`path`和`disk`）来监视后台移动。同样，可以在服务器日志中找到详细信息。
 
-用户可以使用查询[ALTER TABLE ... MOVE PART | PARTITION ... TO VOLUME | DISK ...](https://clickhouse.yandex/docs/en/query_language/alter/#alter_move-partition)来强制将一部分或分区从一个卷移动到另一个卷，所有对后台操作的限制都已考虑在内。该查询将自行启动移动，而无需等待后台操作完成。如果没有足够的可用空间或不满足任何要求的条件，用户将收到错误消息。
+用户可以使用查询[ALTER TABLE ... MOVE PART | PARTITION ... TO VOLUME | DISK ...](https://clickhouse.yandex/docs/en/query_language/alter/#alter_move-partition)来强制将一`parts`或`partition`从一个`volume`移动到另一个`volume`，所有对后台操作的限制都已考虑在内。该查询将自行启动移动，而无需等待后台操作完成。如果没有足够的可用空间或不满足任何要求的条件，用户将收到错误消息。
 
-移动数据不会干扰数据复制。因此，可以为不同副本上的同一表指定不同的存储策略。
+移动数据不会干扰数据复制。因此，可以为不同副本上的同一表指定不同的 `storage policy`。
 
-背景合并和突变完成后，仅在一定时间（`old_parts_lifetime`）后才删除旧零件。在此期间，它们不会移至其他卷或磁盘。因此，在最终卸下这些部件之前，仍要考虑它们以评估占用的磁盘空间。
+后台合并和`mutation`完成后，仅在一定时间（`old_parts_lifetime`）后才删除旧`parts`。在此期间，它们不会移至其他`volume`或`disk`。因此，在最终删除这些`part`之前，仍要考虑它们以评估占用的`disk`空间。
 
 
 
@@ -1616,9 +1625,9 @@ Fields for `pattern` and `default` sections:
 
 引擎：
 
-- 数据存储在磁盘上。
+- 数据存储在`disk`上。
 - 写入时将数据追加在文件末尾。
-- 不支持[突变](https://clickhouse.yandex/docs/zh/single/#alter-mutations)操作。
+- 不支持[`mutation`](https://clickhouse.yandex/docs/zh/single/#alter-mutations)操作。
 - 不支持索引。
 
   这意味着  `SELECT`  在范围查询时效率不高。
@@ -1722,7 +1731,7 @@ SELECT \* FROM stripe_log_table ORDER BY timestamp
 
 ## TinyLog[¶](https://clickhouse.yandex/docs/zh/single/#tinylog "Permanent link")
 
-最简单的`table engines`，用于将数据存储在磁盘上。每列都存储在单独的压缩文件中。写入时，数据将附加到文件末尾。
+最简单的`table engines`，用于将数据存储在`disk`上。每列都存储在单独的压缩文件中。写入时，数据将附加到文件末尾。
 
 并发数据访问不受任何限制： \- 如果同时从表中读取并在不同的查询中写入，则读取操作将抛出异常 \- 如果同时写入多个查询中的表，则数据将被破坏。
 
@@ -2452,7 +2461,7 @@ FROM WatchLog
 
 - 从 ClickHouse 导出数据到文件。
 - 将数据从一种格式转换为另一种格式。
-- 通过编辑磁盘上的文件来更新 ClickHouse 中的数据。
+- 通过编辑`disk`上的文件来更新 ClickHouse 中的数据。
 
 ### 在 ClickHouse 服务器中的使用[¶](https://clickhouse.yandex/docs/zh/single/#zai-clickhouse-fu-wu-qi-zhong-de-shi-yong "Permanent link")
 
@@ -2518,9 +2527,9 @@ SELECT \* FROM file_engine_table
 
 可以使用 INSERT 向表中插入数据。新元素将添加到数据集中，而重复项将被忽略。但是不能对此类型表执行 SELECT 语句。检索数据的唯一方法是在 IN 运算符的右半部分使用它。
 
-数据始终存在于 RAM 中。对于 INSERT，插入数据块也会写入磁盘上的表目录。启动服务器时，此数据将加载到 RAM。也就是说，重新启动后，数据仍然存在。
+数据始终存在于 RAM 中。对于 INSERT，插入数据块也会写入`disk`上的表目录。启动服务器时，此数据将加载到 RAM。也就是说，重新启动后，数据仍然存在。
 
-对于强制服务器重启，磁盘上的数据块可能会丢失或损坏。在数据块损坏的情况下，可能需要手动删除包含损坏数据的文件。
+对于强制服务器重启，`disk`上的数据块可能会丢失或损坏。在数据块损坏的情况下，可能需要手动删除包含损坏数据的文件。
 
 ## Join[¶](https://clickhouse.yandex/docs/zh/single/#join "Permanent link")
 
@@ -2534,7 +2543,7 @@ Join(ANY|ALL, LEFT|INNER, k1\[, k2, ...\])
 
 类似于 Set 引擎，可以使用 INSERT 向表中添加数据。设置为 ANY 时，重复键的数据会被忽略（仅一条用于连接）。设置为 ALL 时，重复键的数据都会用于连接。不能直接对 JOIN 表进行 SELECT。检索其数据的唯一方法是将其作为 JOIN 语句右边的表。
 
-跟 Set 引擎类似，Join 引擎把数据存储在磁盘中。
+跟 Set 引擎类似，Join 引擎把数据存储在`disk`中。
 
 ## URL(URL, Format)[¶](https://clickhouse.yandex/docs/zh/single/#table_engines-url "Permanent link")
 
@@ -2600,7 +2609,7 @@ SELECT \* FROM url_engine_table
 
 ## Memory[¶](https://clickhouse.yandex/docs/zh/single/#memory "Permanent link")
 
-Memory 引擎以未压缩的形式将数据存储在 RAM 中。数据完全以读取时获得的形式存储。换句话说，从这张表中读取是很轻松的。并发数据访问是同步的。锁范围小：读写操作不会相互阻塞。不支持索引。阅读是并行化的。在简单查询上达到最大生产率（超过 10 GB /秒），因为没有磁盘读取，不需要解压缩或反序列化数据。（值得注意的是，在许多情况下，与 MergeTree 引擎的性能几乎一样高）。重新启动服务器时，表中的数据消失，表将变为空。通常，使用此`table engines`是不合理的。但是，它可用于测试，以及在相对较少的行（最多约 100,000,000）上需要最高性能的查询。
+Memory 引擎以未压缩的形式将数据存储在 RAM 中。数据完全以读取时获得的形式存储。换句话说，从这张表中读取是很轻松的。并发数据访问是同步的。锁范围小：读写操作不会相互阻塞。不支持索引。阅读是并行化的。在简单查询上达到最大生产率（超过 10 GB /秒），因为没有`disk`读取，不需要解压缩或反序列化数据。（值得注意的是，在许多情况下，与 MergeTree 引擎的性能几乎一样高）。重新启动服务器时，表中的数据消失，表将变为空。通常，使用此`table engines`是不合理的。但是，它可用于测试，以及在相对较少的行（最多约 100,000,000）上需要最高性能的查询。
 
 Memory 引擎是由系统用于临时表进行外部数据的查询（请参阅 "外部数据用于请求处理" 部分），以及用于实现  `GLOBAL IN`（请参见 "IN 运算符" 部分）。
 
