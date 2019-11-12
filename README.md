@@ -66,7 +66,7 @@
   
 - [架构](docs/clickhouse_architecture.md)
 
-- [运维](docs/clickhouse_operations.md)
+- [运维](docs/operations/operations_introduction.md)
 
 - [指导](docs/clickhouse_guides.md)
 
