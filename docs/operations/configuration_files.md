@@ -1,6 +1,6 @@
 # Configuration Files
 
-ClickHouse 支持多文件配置管理。主服务器配置文件是`/etc/clickhouse-server/config.xml`。其他文件必须在`/etc/clickhouse-server/config.d`目录中。
+ClickHouse 支持多文件配置管理。主服务器配置文件是`/etc/clickhouse-server/config.xml`（服务器级别，在`session` 和 `query` 级别无法更改）。其他配置文件必须在`/etc/clickhouse-server/config.d`目录中。
 
 - Note
   - 所有配置文件均应为 `XML` 格式。而且，它们通常应具有相同的根元素`<yandex>`。

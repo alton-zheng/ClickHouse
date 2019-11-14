@@ -1112,3 +1112,4 @@ SETTINGS storage_policy = 'moving_from_ssd_to_hdd'
 - 资源池可在用户之间更精确地分配集群容量
 - 细粒度的授权
 - 与外部认证服务集成
+

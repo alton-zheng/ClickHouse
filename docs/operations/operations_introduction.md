@@ -13,5 +13,5 @@
   - [Quotas](quotas.md)
   - [System Tables](system_tables.md)
   - [Server Configuration Parameters](server_configuration_parameters.md)
-  - [Settings](settings.md)
+  - [Settings](settings/settings_introduction.md)
   - [Utilities](utilities.md)
