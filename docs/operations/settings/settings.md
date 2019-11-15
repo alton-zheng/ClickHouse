@@ -884,8 +884,6 @@ load_balance = first_or_random
 
 当选择下一个线程在每个可用的CPU内核上运行时，OS调度器会考虑这个优先级。
 
-警告
-
 要使用此设置，需要设置 `CAP_SYS_NICE` 功能。`clickhouse-server` 包在安装过程中设置它。一些虚拟环境不允许您设置 `CAP_SYS_NICE` 功能。
 在本例中，`clickhouse-server` 在开始时显示关于它的消息。
 
