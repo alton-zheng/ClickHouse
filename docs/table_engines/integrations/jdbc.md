@@ -1,69 +1,81 @@
-## JDBC[¶](https://clickhouse.yandex/docs/zh/single/#table_engine-jdbc "Permanent link")
+## JDBC
 
-Allows ClickHouse to connect to external databases via [JDBC](https://en.wikipedia.org/wiki/Java_Database_Connectivity).
+通过 `JDBC` 连接外部数据库。
 
-To implement the JDBC connection, ClickHouse uses the separate program [clickhouse-jdbc-bridge](https://github.com/alex-krash/clickhouse-jdbc-bridge) that should run as a daemon.
+要实现 `JDBC` 连接，使用单独的程序 `clickhouse-jdbc-bridge`，该程序应作为守护进程运行。
 
-This engine supports the [Nullable](https://clickhouse.yandex/docs/zh/single/#../../data_types/nullable/) data type.
+此引擎支持 `Nullable` 数据类型。
 
-### Creating a Table[¶](https://clickhouse.yandex/docs/zh/single/#creating-a-table_2 "Permanent link")
+---
 
-CREATE TABLE \[IF NOT EXISTS\] \[db.\]table_name
+### Creating a Table 
+```sql
+CREATE TABLE [IF NOT EXISTS] [db.]table_name
 ENGINE = JDBC(dbms_uri, external_database, external_table)
+```
 
-**Engine Parameters**
+参数: 
 
-- `dbms_uri` — URI of an external DBMS.
+- `dbms_uri` — 外部 DBMS `URI`.
 
-  Format: `jdbc:<driver_name>://<host_name>:<port>/?user=<username>&password=<password>`. Example for MySQL: `jdbc:mysql://localhost:3306/?user=root&password=root`.
+- `Format`: 
+  - `jdbc:<driver_name>://<host_name>:<port>/?user=<username>&password=<password>`. 
+  - 例： `MySQL`: `jdbc:mysql://localhost:3306/?user=root&password=root`.
 
-- `external_database` — Database in an external DBMS.
+- `external_database` — 外部 DBMS `database`.
 
-- `external_table` — Name of the table in `external_database`.
+- `external_table` : `external_database` 表名称.
 
-### Usage Example[¶](https://clickhouse.yandex/docs/zh/single/#usage-example_1 "Permanent link")
+---
 
-Creating a table in MySQL server by connecting directly with it's console client:
+### Usage Example
 
-mysql> CREATE TABLE \`test\`.\`test\` (
--\> \`int_id\` INT NOT NULL AUTO_INCREMENT,
--\> \`int_nullable\` INT NULL DEFAULT NULL,
--\> \`float\` FLOAT NOT NULL,
--\> \`float_nullable\` FLOAT NULL DEFAULT NULL,
--\> PRIMARY KEY (\`int_id\`));
+直接连接到控制台客户端上，在 MySQL 服务器上创建一张表:
+
+```mysql
+mysql> CREATE TABLE `test`.`test` (
+    ->   `int_id` INT NOT NULL AUTO_INCREMENT,
+    ->   `int_nullable` INT NULL DEFAULT NULL,
+    ->   `float` FLOAT NOT NULL,
+    ->   `float_nullable` FLOAT NULL DEFAULT NULL,
+    ->   PRIMARY KEY (`int_id`));
 Query OK, 0 rows affected (0,09 sec)
 
-mysql> insert into test (\`int_id\`, \`float\`) VALUES (1,2);
+mysql> insert into test (`int_id`, `float`) VALUES (1,2);
 Query OK, 1 row affected (0,00 sec)
 
-mysql> select \* from test;
+mysql> select * from test;
 +--------+--------------+-------+----------------+
 | int_id | int_nullable | float | float_nullable |
 +--------+--------------+-------+----------------+
-| 1 | NULL | 2 | NULL |
+|      1 |         NULL |     2 |           NULL |
 +--------+--------------+-------+----------------+
 1 row in set (0,00 sec)
+```
 
-Creating a table in ClickHouse server and selecting data from it:
+在ClickHouse服务器中创建一个表并从中选择数据:
 
-CREATE TABLE jdbc_table ENGINE JDBC('jdbc:mysql://localhost:3306/?user=root&password=root', 'test', 'test')
-
+```clickhouse
+CREATE TABLE jdbc_table ENGINE JDBC('jdbc:mysql://localhost:3306/?user=root&password=root', 'test', 'test');
+```
+```clickhouse
 DESCRIBE TABLE jdbc_table
-
+```
+```log
 ┌─name───────────────┬─type───────────────┬─default_type─┬─default_expression─┐
-│ int_id │ Int32 │ │ │
-│ int_nullable │ Nullable(Int32) │ │ │
-│ float │ Float32 │ │ │
-│ float_nullable │ Nullable(Float32) │ │ │
+│ int_id             │ Int32              │              │                    │
+│ int_nullable       │ Nullable(Int32)    │              │                    │
+│ float              │ Float32            │              │                    │
+│ float_nullable     │ Nullable(Float32)  │              │                    │
 └────────────────────┴────────────────────┴──────────────┴────────────────────┘
+```
 
-SELECT \*
-FROM jdbc_table
+```clickhouse
+select * from jdbc_table
+```
 
+```log
 ┌─int_id─┬─int_nullable─┬─float─┬─float_nullable─┐
-│ 1 │ ᴺᵁᴸᴸ │ 2 │ ᴺᵁᴸᴸ │
+│      1 │         ᴺᵁᴸᴸ │     2 │           ᴺᵁᴸᴸ │
 └────────┴──────────────┴───────┴────────────────┘
-
-### See Also[¶](https://clickhouse.yandex/docs/zh/single/#see-also "Permanent link")
-
-- [JDBC table function](https://clickhouse.yandex/docs/zh/single/#../../query_language/table_functions/jdbc/).
+```

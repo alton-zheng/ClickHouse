@@ -169,6 +169,8 @@ sudo -u clickhouse touch /var/lib/clickhouse/flags/force_restore_data
 
 重命名现有的 MergeTree 表，然后使用旧名称创建  `ReplicatedMergeTree`  表。 将数据从旧表移动到新表（`/var/lib/clickhouse/data/db_name/table_name/`）目录内的 'detached' 目录中。 然后在其中一个副本上运行`ALTER TABLE ATTACH PARTITION`，将这些数据`parts`添加到工作集中。
 
+---
+
 ### ReplicatedMergeTree -> MergeTree
 
 使用其他名称创建 MergeTree 表。将具有`ReplicatedMergeTree`表数据的目录中的所有数据移动到新表的数据目录中。然后删除`ReplicatedMergeTree`表并重新启动服务器。

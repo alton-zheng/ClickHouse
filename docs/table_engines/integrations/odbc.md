@@ -1,105 +1,120 @@
-## ODBC[¶](https://clickhouse.yandex/docs/zh/single/#table_engine-odbc "Permanent link")
+## ODBC
 
-Allows ClickHouse to connect to external databases via [ODBC](https://en.wikipedia.org/wiki/Open_Database_Connectivity).
+允许ClickHouse通过 `ODBC` 连接外部数据库。
 
-To safely implement ODBC connections, ClickHouse uses a separate program `clickhouse-odbc-bridge`. If the ODBC driver is loaded directly from `clickhouse-server`, driver problems can crash the ClickHouse server. ClickHouse automatically starts `clickhouse-odbc-bridge` when it is required. The ODBC bridge program is installed from the same package as the `clickhouse-server`.
+- 为了安全地实现 `ODBC` 连接，ClickHouse使用一个单独的程序 `clickhouse-odbc-bridge`。
+  - 如果直接从 `clickhouse-server` 加载 `ODBC` 驱动程序，驱动程序问题可能会导致 `ClickHouse` 服务器崩溃。
+  - 需要时，`ClickHouse` 自动启动 `clickhouse-odbc-bridge`。
+  - ODBC 桥程序是从与 `clickhouse-server` 相同的包中安装的。
 
-This engine supports the [Nullable](https://clickhouse.yandex/docs/zh/single/#../../data_types/nullable/) data type.
+此引擎支持 `Nullable` 的数据类型。
 
-### Creating a Table[¶](https://clickhouse.yandex/docs/zh/single/#creating-a-table_3 "Permanent link")
+---
 
-CREATE TABLE \[IF NOT EXISTS\] \[db.\]table_name \[ON CLUSTER cluster\]
+### Creating a Table
+
+```clickhouse
+CREATE TABLE [IF NOT EXISTS] [db.]table_name [ON CLUSTER cluster]
 (
-name1 \[type1\],
-name2 \[type2\],
-...
+    name1 [type1],
+    name2 [type2],
+    ...
 )
 ENGINE = ODBC(connection_settings, external_database, external_table)
+```
 
-See a detailed description of the [CREATE TABLE](https://clickhouse.yandex/docs/zh/single/#create-table-query) query.
+- 表结构可以不同于源表结构:
+  - `Column Name` 应该与源表中的 `Column Name` 相同，但是您可以按照任何顺序使用其中的一些列。
+  - `Column Type` 可能与源表中的 `Column Type` 不同。
+    - ClickHouse尝试将值转换为ClickHouse数据类型。
+    
+**参数:** 
 
-The table structure can differ from the source table structure:
+- `connection_settings`:  `odbc.ini` 文件中带有连接设置部分的名称. 
+- `external_database` : 外部 DBMS `database`.
+- `external_table` : `external_database` 表名称.
 
-- Column names should be the same as in the source table, but you can use just some of these columns and in any order.
-- Column types may differ from those in the source table. ClickHouse tries to [cast](https://clickhouse.yandex/docs/zh/single/#type_conversion_function-cast) values to the ClickHouse data types.
+---
 
-**Engine Parameters**
+### Usage Example
 
-- `connection_settings` — Name of the section with connection settings in the `odbc.ini` file.
-- `external_database` — Name of a database in an external DBMS.
-- `external_table` — Name of a table in the `external_database`.
+- 通过ODBC从本地MySQL安装中检索数据
+  - 系统和Mysql版本信息： `Ubuntu Linux 18.04` 和 `MySQL server 5.7`。
+  - 确保安装了 `unixODBC` 和 `MySQL Connector`。
+  - 默认情况下(如果从包中安装)，ClickHouse作为用户 `ClickHouse` 启动。
+  - 因此，您需要在MySQL服务器中创建和配置这个用户。
 
-### Usage Example[¶](https://clickhouse.yandex/docs/zh/single/#usage-example_2 "Permanent link")
+```bash
+$ sudo mysql
+```
 
-**Retrieving data from the local MySQL installation via ODBC**
+```mysql
+CREATE USER 'clickhouse'@'localhost' IDENTIFIED BY 'clickhouse';
+GRANT ALL PRIVILEGES ON *.* TO 'clickhouse'@'clickhouse' WITH GRANT OPTION;
+```
 
-This example is checked for Ubuntu Linux 18.04 and MySQL server 5.7.
+然后在 `/etc/odbc.ini` 中配置连接。
 
-Ensure that unixODBC and MySQL Connector are installed.
-
-By default (if installed from packages), ClickHouse starts as user `clickhouse`. Thus, you need to create and configure this user in the MySQL server.
-
-\$ sudo mysql
-
-mysql> CREATE USER 'clickhouse'@'localhost' IDENTIFIED BY 'clickhouse';
-mysql> GRANT ALL PRIVILEGES ON _._ TO 'clickhouse'@'clickhouse' WITH GRANT OPTION;
-
-Then configure the connection in `/etc/odbc.ini`.
-
-\$ cat /etc/odbc.ini
-\[mysqlconn\]
+```bash
+$ cat /etc/odbc.ini
+[mysqlconn]
 DRIVER = /usr/local/lib/libmyodbc5w.so
 SERVER = 127.0.0.1
 PORT = 3306
 DATABASE = test
 USERNAME = clickhouse
 PASSWORD = clickhouse
+```
 
-You can check the connection using the `isql` utility from the unixODBC installation.
+可以使用 `unixODBC` 安装中的 `isql` 实用程序检查连接。
 
-\$ isql -v mysqlconn
+```bash
+$ isql -v mysqlconn
 +---------------------------------------+
-| Connected! |
-| |
+| Connected!                            |
+|                                       |
 ...
+```
 
-Table in MySQL:
+MySQL表:
 
-mysql> CREATE TABLE \`test\`.\`test\` (
--\> \`int_id\` INT NOT NULL AUTO_INCREMENT,
--\> \`int_nullable\` INT NULL DEFAULT NULL,
--\> \`float\` FLOAT NOT NULL,
--\> \`float_nullable\` FLOAT NULL DEFAULT NULL,
--\> PRIMARY KEY (\`int_id\`));
+```mysql
+CREATE TABLE `test`.`test` (
+  `int_id` INT NOT NULL AUTO_INCREMENT,
+  `int_nullable` INT NULL DEFAULT NULL,
+  `float` FLOAT NOT NULL,
+  `float_nullable` FLOAT NULL DEFAULT NULL,
+  PRIMARY KEY (`int_id`));
 Query OK, 0 rows affected (0,09 sec)
 
-mysql> insert into test (\`int_id\`, \`float\`) VALUES (1,2);
+insert into test (`int_id`, `float`) VALUES (1,2);
 Query OK, 1 row affected (0,00 sec)
 
-mysql> select \* from test;
+select * from test;
 +--------+--------------+-------+----------------+
 | int_id | int_nullable | float | float_nullable |
 +--------+--------------+-------+----------------+
-| 1 | NULL | 2 | NULL |
+|      1 |         NULL |     2 |           NULL |
 +--------+--------------+-------+----------------+
 1 row in set (0,00 sec)
+```  
 
-Table in ClickHouse, retrieving data from the MySQL table:
-
+ClickHouse表，从MySQL表检索数据:
+```clickhouse
 CREATE TABLE odbc_t
 (
-`int_id` Int32,
-`float_nullable` Nullable(Float32)
+    `int_id` Int32,
+    `float_nullable` Nullable(Float32)
 )
 ENGINE = ODBC('DSN=mysqlconn', 'test', 'test')
 
-SELECT \* FROM odbc_t
+SELECT * FROM odbc_t
+```
 
+```log
 ┌─int_id─┬─float_nullable─┐
-│ 1 │ ᴺᵁᴸᴸ │
+│      1 │           ᴺᵁᴸᴸ │
 └────────┴────────────────┘
+```
 
-### See Also[¶](https://clickhouse.yandex/docs/zh/single/#see-also_1 "Permanent link")
 
-- [ODBC external dictionaries](https://clickhouse.yandex/docs/zh/single/#dicts-external_dicts_dict_sources-odbc)
-- [ODBC table function](https://clickhouse.yandex/docs/zh/single/#../../query_language/table_functions/odbc/)

@@ -10,6 +10,8 @@
 
 引擎从 `MergeTree` 继承属性。
 
+---
+
 ### Creating a Table
 
 ```sql
@@ -36,10 +38,12 @@ CREATE TABLE [IF NOT EXISTS] [db.]table_name [ON CLUSTER cluster]
 
 这些列的名称应该在rollup配置中设置
 
+
 #### **GraphiteMergeTree参数**
 
 - `config_section`: —配置文件中节的名称，其中是rollup set的规则。
 
+---
 
 ### `Rollup` configuration
 
@@ -104,7 +108,7 @@ default
 - `function`: 聚合函数的名称，应用于年龄在[`age`, `age + precision`]范围内的数据。
 
 
-```log
+```xml
 <graphite_rollup>
     <version_column_name>Version</version_column_name>
     <pattern>

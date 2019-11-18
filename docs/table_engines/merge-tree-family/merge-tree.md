@@ -8,6 +8,8 @@
   - 支持数据副本(`ReplicatedMergeTree`)
   - 可以给表数据指定采样方法
 
+---
+
 ### Creating a Table
 
 ```
@@ -83,6 +85,8 @@ ENGINE MergeTree() PARTITION BY toYYYYMM(EventDate) ORDER BY (CounterID, EventDa
 - `ClickHouse` 会返回对于用户子集的一个均匀的伪随机数据采样。
 - `index_granularity`  可省略，默认值为 `8192` 。
 
+---
+
 ### Data Storage
 
 - 表由按 `primary key` 排序的数据  *`parts`*  组成
@@ -97,6 +101,8 @@ ENGINE MergeTree() PARTITION BY toYYYYMM(EventDate) ORDER BY (CounterID, EventDa
 - 颗粒的大小受表引擎的 `index_granularity` 和 `index_granularity_bytes` 设置限制。
   - 颗粒中的行数在此 `[1, index_granularity]` 范围内，具体取决于行的大小。
   - `index_granularity_bytes` 如果单行的大小大于设置的值，则颗粒的大小可能会超过。在这种情况下，颗粒的大小等于行的大小。
+
+---
 
 ###  Primary keys and indexes in queries
 
@@ -323,11 +329,15 @@ INDEX sample_index3 (lower(str), str) TYPE ngrambf_v1(3, 256, 2, 0) GRANULARITY 
   - s != 1
   - NOT startsWith(s, 'test')
 
+---
+
 ### Concurrent Data Access
 
 应对表的并发访问，我们使用多版本机制。换言之，当同时读和更新表时，数据从当前查询到的一组`parts`中读取。没有冗长的的锁。插入不会阻碍读取。
 
 对表的读操作是自动并行的。
+
+---
 
 ### TTL for Columns and Tables
 
@@ -432,7 +442,11 @@ TTL d + INTERVAL 1 MONTH;
 
 如果`SELECT`在合并之间执行查询，则可能会获得过期的数据。为了避免这种情况，请在之前使用[OPTIMIZE](https://clickhouse.yandex/docs/en/query_language/misc/#misc_operations-optimize)查询`SELECT`。
 
+---
+
 ## Using multiple block devices for data storage
+
+---
 
 ### **General**
 
@@ -445,6 +459,8 @@ TTL d + INTERVAL 1 MONTH;
   - 在后台的`disk`之间（根据用户设置)
   - 通过 `ALTER` 查询来移动部件。 
 
+---
+
 ### **Terms**
 
 -`Disk`: 挂载到文件系统的块设备。
@@ -453,6 +469,8 @@ TTL d + INTERVAL 1 MONTH;
 - `Storage policy`-许多 `Volume` 以及在它们之间移动数据的规则。
 
 可以在系统表, [system.storage_policies](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-storage_policies)和[system.disks](https://clickhouse.yandex/docs/en/operations/system_tables/#system_tables-disks)找到提供给所描述实体的名称。可以将 `storage policy` 名称用作 `MergeTree` 系列表的参数。
+
+---
 
 ### Configuration
 
@@ -534,6 +552,8 @@ SETTINGS storage_policy = 'moving_from_ssd_to_hdd'
 ```
 
 该`default` `storage policy`意味着使用只有一个`volume`，其中仅由一个在给定的`disk`<path>`。创建表后，将无法更改其 `storage policy`。
+
+---
 
 ### Details
 

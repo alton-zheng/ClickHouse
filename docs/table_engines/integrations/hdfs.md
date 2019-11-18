@@ -1,81 +1,106 @@
-## HDFS[¶](https://clickhouse.yandex/docs/zh/single/#table_engines-hdfs "Permanent link")
+## HDFS
 
-This engine provides integration with [Apache Hadoop](https://en.wikipedia.org/wiki/Apache_Hadoop) ecosystem by allowing to manage data on [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.htmll)via ClickHouse. This engine is similar to the [File](https://clickhouse.yandex/docs/zh/single/#file/) and [URL](https://clickhouse.yandex/docs/zh/single/#url/) engines, but provides Hadoop-specific features.
+这个引擎提供了与[Apache Hadoop](https://en.wikipedia.org/wiki/Apache_Hadoop)生态系统的集成，允许通过ClickHouse来管理hdfs上的数据。
 
-### Usage[¶](https://clickhouse.yandex/docs/zh/single/#usage "Permanent link")
+这个引擎类似于 `File` 和 `URL`引擎(见 `Special` )，但是提供了hadoop独有的特性。
 
+---
+
+### Usage
+```
 ENGINE = HDFS(URI, format)
+```
 
-The `URI` parameter is the whole file URI in HDFS. The `format` parameter specifies one of the available file formats. To perform `SELECT` queries, the format must be supported for input, and to perform `INSERT` queries -- for output. The available formats are listed in the [Formats](https://clickhouse.yandex/docs/zh/single/#formats) section. The path part of `URI` may contain globs. In this case the table would be readonly.
+- `URI` 参数是HDFS中的整个文件URI。
+  - `URI` 的路径部分可能包含globs。
+    - 在这种情况下，表将是只读的。
+    
+- `format` 参数指定一种可用的文件格式。
+  - 要执行 `SELECT` 查询，必须支持用于输入的`format`，并执行 `INSERT` 查询——用于输出。
+  - [`format`](../../clickhouse_interfaces.md) 部分列出了可用的格式。
+  
 
-**Example:**
+**栗:**
 
-**1.** Set up the `hdfs_engine_table` table:
-
+1. 创建 `hdfs_engine_table` 表:
+```clickhouse
 CREATE TABLE hdfs_engine_table (name String, value UInt32) ENGINE=HDFS('hdfs://hdfs1:9000/other_storage', 'TSV')
+```
 
-**2.** Fill file:
-
+2. 填写文件:
+```clickhouse
 INSERT INTO hdfs_engine_table VALUES ('one', 1), ('two', 2), ('three', 3)
+```
 
-**3.** Query the data:
+3.查询数据:
+```clickhouse
+SELECT * FROM hdfs_engine_table LIMIT 2
+```
 
-SELECT \* FROM hdfs_engine_table LIMIT 2
-
+```log
 ┌─name─┬─value─┐
-│ one │ 1 │
-│ two │ 2 │
+│ one  │     1 │
+│ two  │     2 │
 └──────┴───────┘
+```
 
-### Implementation Details[¶](https://clickhouse.yandex/docs/zh/single/#implementation-details "Permanent link")
+---
 
-- Reads and writes can be parallel
-- Not supported:
-  - `ALTER` and `SELECT...SAMPLE` operations.
-  - Indexes.
-  - Replication.
+### Implementation Details
 
+- 读写可以是并行的
+- 不支持:
+  - `Alter` 和 `SELECT...SAMPLE` 操作。
+  - 索引
+  - 备份
+  
 **Globs in path**
 
-Multiple path components can have globs. For being processed file should exists and matches to the whole path pattern. Listing of files determines during `SELECT` (not at `CREATE` moment).
+- 多个路径组件可以有全局特性。
+  - 正在处理的文件应该存在并与整个路径模式匹配。
+  - 文件列表在 `SELECT` 期间确定(而不是在 `CREATE` 时)。
+    - `*` : 替换除 `/` 包括空字符串之外的任意数量的任何字符。
+    - `?`: 替换任何单个字符。
+    - `{some_string,another_string,yet_another_one}` :
+      - 替换任何字符串 `'some_string'`,`'another_string'`,`'yet_another_one'`
+    - `{N..M}` : 替换从N到M范围的任何数字(闭区间)
+    
+带有{}的结构类似于远程表函数(见查询语法知识)。
 
-- `*` — Substitutes any number of any characters except `/` including empty string.
-- `?` — Substitutes any single character.
-- `{some_string,another_string,yet_another_one}` — Substitutes any of strings `'some_string', 'another_string', 'yet_another_one'`.
-- `{N..M}` — Substitutes any number in range from N to M including both borders.
+**栗子**：
 
-Constructions with `{}` are similar to the [remote](https://clickhouse.yandex/docs/zh/single/#../../query_language/table_functions/remote/) table function.
+假设我们有几个 `TSV` 格式的文件，在HDFS上有以下 `URI`:
+  - 'hdfs://hdfs1:9000/some_dir/some_file_1'
+  - 'hdfs://hdfs1:9000/some_dir/some_file_2'
+  - 'hdfs://hdfs1:9000/some_dir/some_file_3'
+  - 'hdfs://hdfs1:9000/another_dir/some_file_1'
+  - 'hdfs://hdfs1:9000/another_dir/some_file_2'
+  - 'hdfs://hdfs1:9000/another_dir/some_file_3'
 
-**Example**
+有几种方法使一个表由所有六个文件:
 
-1.  Suppose we have several files in TSV format with the following URIs on HDFS:
+```clickhouse
+CREATE TABLE table_with_range (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/{some,another}_dir/some_file_{1..3}', 'TSV')
+```
 
-2.  'hdfs://hdfs1:9000/some_dir/some_file_1'
+另一种方法: 
 
-3.  'hdfs://hdfs1:9000/some_dir/some_file_2'
-4.  'hdfs://hdfs1:9000/some_dir/some_file_3'
-5.  'hdfs://hdfs1:9000/another_dir/some_file_1'
-6.  'hdfs://hdfs1:9000/another_dir/some_file_2'
-7.  'hdfs://hdfs1:9000/another_dir/some_file_3'
+```clickhouse
+CREATE TABLE table_with_question_mark (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/{some,another}_dir/some_file_?', 'TSV')
+```
 
-8.  There are several ways to make a table consisting of all six files:
+表中包含两个目录中的所有文件(所有文件应满足查询中描述的格式和模式):
+```clickhouse
+CREATE TABLE table_with_asterisk (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/{some,another}_dir/*', 'TSV')
+```
 
-CREATE TABLE table_with_range (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/{some,another}\_dir/some_file\_{1..3}', 'TSV')
+---
 
-Another way:
+**警告**: 
+如果文件清单中包含带前导零的数字范围，则对每个数字分别使用带大括号的构造或使用`?`.
 
-CREATE TABLE table_with_question*mark (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/{some,another}\_dir/some_file*?', 'TSV')
-
-Table consists of all the files in both directories (all files should satisfy format and schema described in query):
-
-CREATE TABLE table_with_asterisk (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/{some,another}\_dir/\*', 'TSV')
-
-Warning
-
-If the listing of files contains number ranges with leading zeros, use the construction with braces for each digit separately or use `?`.
-
-**Example**
-
-Create table with files named `file000`, `file001`, ... , `file999`:
-
+**栗子**：
+创建一个带有`file000`、`file001`、…`file999`的表:
+```clickhouse
 CREARE TABLE big_table (name String, value UInt32) ENGINE = HDFS('hdfs://hdfs1:9000/big_dir/file{0..9}{0..9}{0..9}', 'CSV')
+```
