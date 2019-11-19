@@ -1,61 +1,96 @@
-## File(InputFormat)[¶](https://clickhouse.yandex/docs/zh/single/#table_engines-file "Permanent link")
+## File
 
-数据源是以 Clickhouse 支持的一种输入格式（TabSeparated，Native 等）存储数据的文件。
+文件表引擎以一种受支持的文件格式(`TabSeparated`、`Native`等)将数据保存在文件中。
 
-用法示例：
+- 使用例子:
 
-- 从 ClickHouse 导出数据到文件。
-- 将数据从一种格式转换为另一种格式。
-- 通过编辑`disk`上的文件来更新 ClickHouse 中的数据。
+  - 数据从 `ClickHouse` 导出到文件。
+  - 将数据从一种格式转换为另一种格式。
+  - 通过编辑磁盘上的文件更新 `ClickHouse` 中的数据。(仅支持更改 `File` 表引擎)
+  
+---
 
-### 在 ClickHouse 服务器中的使用[¶](https://clickhouse.yandex/docs/zh/single/#zai-clickhouse-fu-wu-qi-zhong-de-shi-yong "Permanent link")
+### Usage in ClickHouse Server
 
+```
 File(Format)
+```
 
-选用的  `Format`  需要支持  `INSERT`  或  `SELECT` 。有关支持格式的完整列表，请参阅  [格式](https://clickhouse.yandex/docs/zh/single/#formats)。
+- Format: 
+  - 指定一种可用的文件格式。
+    - 需要满足 `SELECT` 和 `INSERT` 输入输出格式的要求，见 [Format](../../clickhouse_interfaces.md)
 
-ClickHouse 不支持给  `File`  指定文件系统路径。它使用服务器配置中  [path](https://clickhouse.yandex/docs/zh/single/#../server_settings/settings/)  设定的文件夹。
+---
 
-使用  `File(Format)`  创建表时，它会在该文件夹中创建空的子目录。当数据写入该表时，它会写到该子目录中的  `data.Format`  文件中。
+### Path Configuration
+- 在服务器配置进行[设置](../../operations/server_configuration_parameters.md)
+  - 其它地方，不允许为 `File` 指定文件系统路径。
 
-你也可以在服务器文件系统中手动创建这些子文件夹和文件，然后通过  [ATTACH](https://clickhouse.yandex/docs/zh/single/#../../query_language/misc/)  将其创建为具有对应名称的表，这样你就可以从该文件中查询数据了。
+---
 
-!!! 注意 注意这个功能，因为 ClickHouse 不会跟踪这些文件在外部的更改。在 ClickHouse 中和 ClickHouse 外部同时写入会造成结果是不确定的。
+### 文件保存路径(建表和写数)
+- 当使用 `File(Format)` 创建表时，它将在该文件夹中创建空的子目录。当数据被写入该表时，放入到 （ `Path Configuration` 部分指定的目录）子目录中的 `data.Format` 文件
 
-**示例：**
+- 手动创建这个子文件夹和文件，然后将其附加到具有匹配名称的表信息上，这样就可以从该文件中查询数据。
 
-**1.**  创建  `file_engine_table`  表：
+**警告**: 
 
+- 请小心使用此功能: 
+  - 因为 ClickHouse不跟踪此类文件的外部更改。
+  - 通过ClickHouse和ClickHouse外部同时进行写操作的结果是未定义的。
+
+例子:
+
+- 创建 `file_engine_table` 表:
+
+```clickhouse
 CREATE TABLE file_engine_table (name String, value UInt32) ENGINE=File(TabSeparated)
+```
 
-默认情况下，Clickhouse 会创建目录  `/var/lib/clickhouse/data/default/file_engine_table` 。
+  - 默认情况下，ClickHouse将创建文件夹 `/var/lib/clickhouse/data/default/file_engine_table`(可在系统配置中进行设置)
 
-**2.**  手动创建  `/var/lib/clickhouse/data/default/file_engine_table/data.TabSeparated`  文件，并且包含内容：
+- 手动创建 `/var/lib/clickhouse/data/default/file_engine_table/data.TabSeparated`
 
-\$ cat data.TabSeparated
+```log
+$ cat data.TabSeparated
 one 1
 two 2
+```
 
-**3.**  查询这些数据:
+- 查询表数据：
+```clickhouse
+SELECT * FROM file_engine_table
+```
 
-SELECT \* FROM file_engine_table
-
+```log
 ┌─name─┬─value─┐
-│ one │ 1 │
-│ two │ 2 │
+│ one  │     1 │
+│ two  │     2 │
 └──────┴───────┘
+```
 
-### 在 Clickhouse-local 中的使用[¶](https://clickhouse.yandex/docs/zh/single/#zai-clickhouse-local-zhong-de-shi-yong "Permanent link")
+---
 
-使用  [clickhouse-local](https://clickhouse.yandex/docs/zh/single/#../utils/clickhouse-local/)  时，File 引擎除了  `Format`  之外，还可以接受文件路径参数。可以使用数字或人类可读的名称来指定标准输入/输出流，例如  `0`  或  `stdin`，`1`  或  `stdout`。 **例如：**
+### Usage in Clickhouse-local
 
-\$ echo -e "1,2\\n3,4" | clickhouse-local -q "CREATE TABLE table (a Int64, b Int64) ENGINE = File(CSV, stdin); SELECT a, b FROM table; DROP TABLE table"
+- `clickhouse-local` `File Engine`: 
+  - 除了格式之外，还接受文件路径
+  - 默认输入/输出流可以使用数字或可读的名称(如 `0` 或`stdin` , `1` 或 `stdout` )来指定。
+  
+- **Example**:
 
-### 功能实现[¶](https://clickhouse.yandex/docs/zh/single/#gong-neng-shi-xian "Permanent link")
+```bash
+$ echo -e "1,2\n3,4" | clickhouse-local -q "CREATE TABLE table (a Int64, b Int64) ENGINE = File(CSV, stdin); SELECT a, b FROM table; DROP TABLE table"
+```
 
-- 读操作可支持并发，但写操作不支持
+---
+
+### Detail of implementation
+
+- 多个`SELECT`查询可以并发执行，但是 `INSERT` 查询将彼此等待。
+
 - 不支持:
-- `ALTER`
-- `SELECT ... SAMPLE`
-- 索引
-- 副本
+  - `ALTER`
+  - `SELECT ... SAMPLE`
+  - 索引
+  - 副本
