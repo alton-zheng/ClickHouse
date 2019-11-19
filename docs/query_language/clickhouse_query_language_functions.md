@@ -6,32 +6,32 @@
 
 _-“ arrayJoin”函数属于第三种函数；表函数也可以单独提及。_
 
-## 强类型[¶](https://clickhouse.yandex/docs/en/query_language/functions/#strong-typing "永久链接")
+## 强类型
 
 与标准 SQL 相比，ClickHouse 具有强类型。换句话说，它不会在类型之间进行隐式转换。每个函数都适用于一组特定的类型。这意味着有时您需要使用类型转换功能。
 
-## 通用子表达式消除[¶](https://clickhouse.yandex/docs/en/query_language/functions/#common-subexpression-elimination "永久链接")
+## 通用子表达式消除
 
 查询中具有相同 AST（相同记录或相同语法分析结果）的所有表达式都被认为具有相同的值。此类表达式被串联并执行一次。同样的子查询也可以通过这种方式消除。
 
-## 结果类型[¶](https://clickhouse.yandex/docs/en/query_language/functions/#types-of-results "永久链接")
+## 结果类型
 
 所有函数都将返回一个返回值（不是多个值，也不是零值）。结果的类型通常仅由参数的类型定义，而不由值定义。tupleElement 函数（aN 运算符）和 toFixedString 函数是例外。
 
-## 常量[¶](https://clickhouse.yandex/docs/en/query_language/functions/#constants "永久链接")
+## 常量
 
 为简单起见，某些函数只能对某些参数使用常量。例如，LIKE 运算符的 right 参数必须为常数。几乎所有函数都为常量参数返回常量。生成随机数的函数是个例外。对于在不同时间运行的查询，“ now”函数返回不同的值，但结果被认为是常量，因为常量仅在单个查询中很重要。常量表达式也被视为常量（例如，可以从多个常量构造 LIKE 运算符的右半部分）。
 
 可以对常量和非常量参数以不同的方式实现函数（执行不同的代码）。但是，常数和仅包含相同值的 true 列的结果应该彼此匹配。
 
-## NULL 处理[¶](https://clickhouse.yandex/docs/en/query_language/functions/#null-processing "永久链接")
+## NULL 处理
 
 函数具有以下行为：
 
 - 如果函数的至少一个参数为`NULL`，则函数的结果也为`NULL`。
 - 在每个功能的说明中分别指定的特殊行为。在 ClickHouse 源代码中，这些函数具有`UseDefaultImplementationForNulls=false`。
 
-## 常数[¶](https://clickhouse.yandex/docs/en/query_language/functions/#constancy "永久链接")
+## 常数
 
 函数不能更改其参数的值–任何更改都将作为结果返回。因此，计算单独功能的结果不取决于在查询中写入功能的顺序。
 

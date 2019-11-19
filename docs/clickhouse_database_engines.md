@@ -64,20 +64,20 @@ BINARY	                                   FixedString
 
 MySQL 中的表：
 
-```
-mysql> USE test;
+```mysql
+USE test;
 Database changed
 
-mysql> CREATE TABLE `mysql_table` (
-    ->   `int_id` INT NOT NULL AUTO_INCREMENT,
-    ->   `float` FLOAT NOT NULL,
-    ->   PRIMARY KEY (`int_id`));
+CREATE TABLE `mysql_table` (
+   `int_id` INT NOT NULL AUTO_INCREMENT,
+   `float` FLOAT NOT NULL,
+   PRIMARY KEY (`int_id`));
 Query OK, 0 rows affected (0,09 sec)
 
-mysql> insert into mysql_table (`int_id`, `float`) VALUES (1,2);
+insert into mysql_table (`int_id`, `float`) VALUES (1,2);
 Query OK, 1 row affected (0,00 sec)
 
-mysql> select * from mysql_table;
+select * from mysql_table;
 +--------+-------+
 | int_id | value |
 +--------+-------+
@@ -88,7 +88,7 @@ mysql> select * from mysql_table;
 
 `ClickHouse`数据库与 `MySQL` 服务器交换数据：
 
-```
+```clickhouse
 CREATE DATABASE mysql_db ENGINE = MySQL('localhost:3306', 'test', 'my_user', 'user_password')
 SHOW DATABASES
 ┌─name─────┐
@@ -119,6 +119,6 @@ SELECT * FROM mysql_db.mysql_table
 
 ### Create a Database
 
-```
+```clickhouse
 CREATE DATABASE testlazy ENGINE = Lazy(expiration_time_in_seconds);
 ```

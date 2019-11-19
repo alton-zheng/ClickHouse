@@ -8,5 +8,5 @@
 grep -q sse4_2 /proc/cpuinfo && echo "SSE 4.2 supported" || echo "SSE 4.2 not supported"
 ```
 
-推荐使用Ubuntu或者Debian。终端必须使用UTF-8编码。
+推荐使用 `Ubuntu` 或者 `Debian` 。终端必须使用 `UTF-8` 编码。
 
