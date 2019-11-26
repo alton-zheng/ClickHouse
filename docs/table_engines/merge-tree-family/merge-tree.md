@@ -421,15 +421,8 @@ TTL d + INTERVAL 1 MONTH;
 改变表的 TTL
 
 ```sql
-CREATE TABLE example_table 
-(
-    d DateTime,
-    a Int
-)
-ENGINE = MergeTree
-PARTITION BY toYYYYMM(d)
-ORDER BY d
-TTL d + INTERVAL 1 MONTH;
+ALTER TABLE example_table
+    MODIFY TTL d + INTERVAL 1 DAY;
 ```
 
 **Removing Data**

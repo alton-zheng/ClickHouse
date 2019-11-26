@@ -696,7 +696,7 @@ ClickHouse 会依据 `primary key` 索引剪掉不符合的数据，依据按月
 SELECT count() FROM table WHERE CounterID = 34 OR URL LIKE '%upyachka%'
 ```
 
-要检查 ClickHouse 执行一个查询时能否使用索引，可设置  `force_index_by_date` 和  `force_primary_key`, 运维部分。
+要检查 ClickHouse 执行一个查询时能否使用索引，可设置  `force_index_by_date` 和  `force_primary_key`, 见运维部分。
 
 按月分区的分区键是只能读取包含适当范围日期的数据块。这种情况下，数据块会包含很多天（最多整月）的数据。
 - 在块中，数据按 `primary key` 排序， `primary key` 第一列可能不包含日期。
