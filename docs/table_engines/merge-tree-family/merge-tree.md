@@ -523,10 +523,17 @@ ALTER TABLE example_table
 
 - `volume` 和 `storage policy` 名称以标签名称形式给出。
 - `disk` : `volume` 中的`disk`。
-- `max_data_part_size_bytes` —可以存储在任何 `volume` 的 `disk` 上的部件的最大大小。
-- `move_factor` —当可用空间量小于该因子时，数据将自动开始在下一个`volume`（如果有）上移动（默认值为 `0.1`）。
+- `max_data_part_size_bytes` : 可以存储在任何 `volume` 的 `disk` 上的 part 最大值（byte）。
+- `move_factor` : 当可用空间量小于该因子时，数据将自动开始向下一个`volume`（如果有）上移动。
+  - （默认值为 `0.1`）
 
-在给定的示例中，该`hdd_in_order`策略实现了[循环](https://en.wikipedia.org/wiki/Round-robin_scheduling)方法。由于该策略仅定义一个`volume`（`single`），因此数据以循环顺序存储在其所有`disk`上。如果有多个类似的`disk`安装到系统，则此策略将非常有用。如果有不同的`disk`，则`moving_from_ssd_to_hdd`可以使用该策略。该`volume`hot`由一个 SSD `disk`（`fast_ssd`）组成，该`volume`上可以存储的部件的最大大小为 1GB。所有大小大于 1GB 的部件将直接存储在`cold`包含 HDD `disk`的`volume`上`disk1`。同样，一旦`disk`的`fast_ssd`容量超过 80％，数据将`disk1`通过后台进程传输。
+- 在给定的示例中，该`hdd_in_order`策略实现了[循环](https://en.wikipedia.org/wiki/Round-robin_scheduling)方法。
+  - 因此数据以循环顺序存储在其所有disk上。
+  - 如果有多个类似的`disk`安装到系统，则此策略将非常有用。
+  - 如果有不同的`disk`，则可以使用`moving_from_ssd_to_hdd`策略。
+  - 该`volume`hot`由一个 SSD `disk（`fast_ssd`）组成，该`volume`上可以存储的部件的最大大小为 1GB。
+  - 所有大小大于 1GB 的部件将直接存储在`cold`包含 HDD `disk`的`volume`上`disk1`。
+  - 同样，一旦`disk`的`fast_ssd`容量超过 80％，数据将通过后台进程传输到 `disk1`。
 
  `storage policy`中`volume`枚举的顺序很重要。一旦一个`volume`被过度填充，数据将移至下一个。`disk`枚举的顺序也很重要，因为数据是依次存储在`disk`上的。
 
