@@ -106,7 +106,7 @@ CREATE TABLE [IF NOT EXISTS] [db.]table_name [ON CLUSTER cluster]
 
 因此，折叠不应该改变统计数据的结果。 变化逐渐地被折叠，因此最终几乎每个对象都只剩下了最后的状态。
 
-`Sign` 是必须的因为合并算法不保证所有有相同主键的行都会在同一个结果数据`part`中，甚至是在同一台物理服务器上。`ClickHouse` 用多线程来处理 `SELECT` 请求，所以它不能预测结果中行的顺序。如果要从 `CollapsingMergeTree` 表中获取完全 `CollapsingMergeTree` 后的数据，则需要聚合。
+这个 sign 是必需的，因为合并算法不能保证具有相同排序键的所有行都位于相同的结果数据部分，甚至在相同的物理服务器上，甚至是在同一台物理服务器上。`ClickHouse` 用多线程来处理 `SELECT` 请求，所以它不能预测结果中行的顺序。如果要从 `CollapsingMergeTree` 表中获取完全 `CollapsingMergeTree` 后的数据，则需要聚合。
 
 - 要完成折叠，请使用 `GROUP BY` 从句和用于处理 `Sign` 的聚合函数编写请求。
   - 例如，要计算数量，使用 `sum(Sign)` 而不是 `count()`。

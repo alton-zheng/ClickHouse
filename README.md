@@ -56,7 +56,7 @@
     - [`URL`](docs/table_engines/special/url.md)
     - [`View`](docs/table_engines/special/view.md)
     - [`MaterializedView`](docs/table_engines/special/materialized-view.md)
-    - [`Memory`](docs/table_engines/special/merge.md)
+    - [`Memory`](docs/table_engines/special/memory.md)
     - [`Buffer`](docs/table_engines/special/buffer.md)
     
 - [`SQL Reference`](docs/clickhouse_query_language.md)

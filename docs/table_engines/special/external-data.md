@@ -4,7 +4,7 @@
 
 ### External Data
 
-- `ClickHouse` 允许向服务器发送处理查询所需的数据( `External Data` )以及 `SELECT` 查询。
+- `ClickHouse` 允许向服务器发送处理查询所需的数据( `External Data` ) 和 `SELECT` 查询。
   - 这些数据放在一个临时表中（请参阅 "Temporary tables" 部分），可以在查询中使用（例如，在 IN 操作符中）。
   - 例如，如果您有一个包含重要用户标识符的文本文件，则可以将其与使用此列表过滤的查询一起上传到服务器。
 

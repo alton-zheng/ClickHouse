@@ -1,6 +1,6 @@
 ## GraphiteMergeTree
 
-这个引擎是为 `thin` 和 `aggregation`  /`average`(`rollup`) [`Graphite`](https://graphite.readthedocs.io/en/latest/index.html) 数据而设计的。
+这个引擎是为和 `aggregation`  /`average`(`rollup`) [`Graphite`](https://graphite.readthedocs.io/en/latest/index.html) 数据而设计的。
 
 它可能对那些想要使用ClickHouse作为石墨数据存储的开发人员有帮助。
 
