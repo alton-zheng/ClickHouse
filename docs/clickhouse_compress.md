@@ -1,10 +1,10 @@
 # Compression in ClickHouse
 
-[Compression in ClickHouse](https://www.altinity.com/blog/2017/11/21/compression-in-clickhouse),  原文在*`2017/11/21`* 发表
+ClickHouse 支持  `LZ4`（默认）, `ZSTD`, `Multiple`, `Delta`, `T64`, `DoubleDelta`, `Gorilla` 压缩算法
 
-`ClickHouse` 支持2种压缩方法（算法）， 默认 `L24`, 可以用相关配置指定：
-  - `LZ4`
-  - `ZSTD`
+2018 年前， ClickHouse 仅支持两种 `LZ4`（默认）, `ZSTD`
+
+[Compression in ClickHouse](https://www.altinity.com/blog/2017/11/21/compression-in-clickhouse),  原文在*`2017/11/21`* 发表
 
 [基于`Mysql`压缩算法测试报告](https://www.percona.com/blog/2016/04/13/evaluating-database-compression-methods-update/)
 
