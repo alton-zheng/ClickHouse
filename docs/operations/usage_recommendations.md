@@ -10,13 +10,16 @@ $ echo 'performance' | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_gov
 
 ## CPU Limitations
 
-处理器可能会过热。使用`dmesg`，看看  的 `Clock rate` 被由过热的`CPU`限制。也可以在数据中心级别在外部设置限制。您可以使用`turbostat`它来监视负载。
-
+- 处理器可以过热。使用 `dmesg`(设备故障诊断工具) 查看CPU的时钟速率是否由于过热而受到限制。
+  - 这个限制也可以在数据中心级别的外部设置。
+  - 您可以使用 `turbostat` 来监控负载情况
+    - turbostat是intel针对自己的x86 CPU，做的一个CPU频率、能耗监控的用户态程序
+  
 ## RAM
 
-- 对于少量数据（最多压缩约 `200 GB`），最好使用与数据量一样多的内存。
+- 对于少量数据（最多压缩约 `200 GB`），最好至少使用数据量一样多的内存。
 - 对于大量数据，以及在处理交互式（在线）查询时，应使用合理数量的 `RAM`（`128 GB` 或更多），以便热数据子集, 适合页面缓存。
-- 即使对于每台服务器约 50 TB 的数据量，与 64 GB 相比，使用 128 GB 的 RAM 也可以显着提高查询性能。
+- 即使对于每台服务器约 `50TB` 的数据量，与64 GB相比，使用128 GB RAM可以显著提高查询性能。
 
 不要禁用过量使用。该值`cat /proc/sys/vm/overcommit_memory`应为 0 或 1。运行
 
@@ -26,7 +29,10 @@ $ echo 0 | sudo tee /proc/sys/vm/overcommit_memory
 
 ## Huge Pages
 
-始终禁用透明的大页面。它会干扰内存分配器，从而导致性能显着下降。
+- 始终禁用 `transparent huge`。它会干扰内存分配器，从而导致性能显着下降。
+  - `Transparent HugePages` 是 `RHEL6` 的新特性。
+    - 因为 Transparent HugePages 是在运行时动态分配内存的，所以会带来在运行时内存分配延误。
+  - 禁用它，`ClickHouse`, `Redis`, `Mongdb`， `Oracle` 等, 性能表现才会更稳定。
 
 ```bash
 $ echo 'never' | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
@@ -37,8 +43,8 @@ $ echo 'never' | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 ## Storage Subsystem
 
 - 尽量使用好的磁盘：
--> `SSD` -> `HDD`(`SATA HDD 7200 RPM`)
--> `Server`(`local hard drives`) -> 云服务器（少数具有附加磁盘架(`shelves`））
+  - -> `SSD` -> `HDD`(`SATA HDD 7200 RPM`)
+  - -> `Server`(`local hard drives`) -> 云服务器（少数具有附加磁盘架(`shelves`））
 
 ## RAID
 
@@ -72,27 +78,31 @@ $ echo 4096 | sudo tee /sys/block/md2/md/stripe_cache_size
 
 ## Network
 
-如果使用的是 `IPv6`，请增加路由缓存的大小。3.2 之前的 Linux 内核在 `IPv6` 实现方面存在很多问题。
+如果你使用IPv6，增加路由缓存的大小。在3.2之前的Linux内核在IPv6实现方面有很多问题。
 
 如果可能，请至少使用 10 GB 的网络。`万兆`
 
-1 Gb 也可以使用，但是如果用数十兆字节的数据修补副本，或者使用大量中间数据处理分布式查询，情况将更糟。
+千兆也可以，但是如果要修补包含几十TB数据的副本，或者处理包含大量中间数据的分布式查询，情况就会糟糕得多。
 
 ## Zookeeper
 
-ZooKeeper `fresh version` – 3.4.9 或更高版本。稳定的 Linux 发行版中的版本可能已过时。
+- 使用默认设置，`ZooKeeper` 是定时炸弹：
 
-您永远不要使用手动编写的脚本在不同的 ZooKeeper 群集之间传输数据，因为对于顺序节点，结果将是不正确的。出于相同的原因，切勿使用 "zkcopy" ：https://github.com/ksprojects/zkcopy/issues/15
+- 使用 >= `ZooKeeper 3.4.9` 版本
 
-如果要将现有的 ZooKeeper 群集分为两个，正确的方法是增加其副本的数量，然后将其重新配置为两个独立的群集。
+- 您不要用手动编写的脚本在不同的ZooKeeper集群之间传输数据，因为结果对于顺序节点来说是不正确的。
 
-不要在与 `ClickHouse` 相同的服务器上运行 ZooKeeper。因为 ZooKeeper 对延迟非常敏感，因此 `ClickHouse` 可能会利用所有可用的系统资源。
+- 永远不要出于相同的原因使用“zkcopy”实用程序:https://github.com/ksprojects/zkcopy/issues/15
 
-使用默认设置，`ZooKeeper` 是定时炸弹：
+- 如果您想将现有的ZooKeeper集群分成两个，正确的方法是增加其副本的数量，然后将其重新配置为两个独立的集群。
 
-> 使用默认配置（请参阅自动清除）时，ZooKeeper 服务器不会从旧的快照和日志中删除文件，这是操作员的责任。
+- 不要在与 `ClickHouse` 相同的服务器上运行 `ZooKeeper`。
+  - 因为ZooKeeper对延迟非常敏感，ClickHouse会利用所有可用的系统资源。
 
-必须拆除这枚炸弹。
+在默认设置下，ZooKeeper就像一颗定时炸弹:
+
+
+> 当使用默认配置时，ZooKeeper服务器不会从旧快照和日志中删除文件(参见autopurge)，这是运维的职责。
 
 截至 2017 年 5 月 20 日，以下的 ZooKeeper（3.5.1）配置在 Yandex.Metrica 生产环境中使用：
 

@@ -3,7 +3,6 @@
 ## 文档
 - [官方文档](https://clickhouse.yandex/docs/en/)
 - [最快开源 OLAP 引擎！ ClickHouse 在头条的技术演进](https://www.v2ex.com/t/580396)
-- [《大数据实时分析领域的黑马ClickHouse》二次解读](https://blog.csdn.net/haitianxueyuan521/article/details/80983001)
 
 - 实践案例：
 - [使用ClickHouse对每秒6百万次请求进行HTTP分析](http://fashengba.com/post/http-analytics-for-6m-requests-per-second-using-clickhouse.html)
