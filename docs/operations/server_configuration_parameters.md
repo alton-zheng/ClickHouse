@@ -203,6 +203,7 @@ SSL 客户端/服务器配置。
 如果`http_port`指定，则即使已设置 `openSSL` 配置也将被忽略。
 
 ## http_server_default_response
+- 访问ClickHouse HTTP(s)服务器时默认显示的页面。
 
 ```xml
 <http_server_default_response>
@@ -212,13 +213,13 @@ SSL 客户端/服务器配置。
 
 ## include_from
 
+- 具有替换的文件的路径。
+- 有关更多信息，请参见 [config file](configuration_files.md) 一节。
+
 ```xml
 <include_from>/etc/metrica.xml</include_from>
 ```
 
-- 带替换文件的路径。
-
-有关更多信息，请参见 [配置文件](configuration_files.md) 部分。
 
 ## interserver_http_port
 
@@ -250,10 +251,6 @@ SSL 客户端/服务器配置。
 ```
 
 在使用 `Replicated*` 引擎进行[复制](../table_engines/merge-tree-family/data-replication.md)期间进行身份验证的用户名和密码。这些凭据仅用于副本之间的通信，与 ClickHouse 客户端的凭据无关。服务器正在检查这些凭据以连接副本，并在连接到其他副本时使用相同的凭据。因此，对于群集中的所有副本，应将这些凭据设置为相同。默认情况下，不使用身份验证。
-
-本节包含以下参数：
-
-在使用复制*引擎进行复制期间用于身份验证的用户名和密码。这些凭据仅用于副本之间的通信，与ClickHouse客户机的凭据无关。服务器正在检查这些连接副本的凭据，并在连接其他副本时使用相同的凭据。因此，应该为集群中的所有副本设置相同的凭据。默认情况下，不使用身份验证。
 
 本节包含以下参数:
 
@@ -351,7 +348,7 @@ SSL 客户端/服务器配置。
 ```
 同时处理的最大请求数。
 
-## MAX_CONNECTIONS
+## max_connections
 
 ```xml
 <max_connections>4096</max_connections>

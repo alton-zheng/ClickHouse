@@ -5,9 +5,29 @@
 - `system.asynchronous_metrics` :   包含在后台定期计算的指标。例如，正在使用的RAM的数量。
 - `system.clusters` :  包含配置文件中可用的集群和其中的服务器的信息。
 - `system.columns` :  包含有关所有表中列的信息
-- `system.contributors` :  包含有关贡献者的信息。所有贡献者以随机顺序排列。该顺序在`query`执行时是随机的。
-- `system.databases` : 
-- `` : 
+- `system.contributors` :  包含有关贡献者的信息。所有贡献者以随机顺序排列。该顺序在`query`执行时是随机的。 Column,  metric(String)   value(Float64)
+- `system.databases` :  包含服务中所有 databases .  name(String)
+- `system.detached_parts`: 包含关于合并树表的分离部分的信息。
+- `system.dictionaries` :包含关于外部字典的信息
+- `System.events`:包含关于系统中发生的事件数量的信息。例如，在表中，您可以找到自ClickHouse服务器启动以来处理了多少SELECT查询。
+- `System.functions`:包含关于普通函数和聚合函数的信息。
+- `system.graphite_retentions`:包含有关参数graphite_rollup的信息，这些参数在带有*GraphiteMergeTree引擎的表中使用。
+- `System.merges`:包含有关合并和部分突变的信息，目前用于处理中 MergeTree 家族的表。
+- `System.metrics`:包含可以立即计算或具有当前值的度量。例如，同时处理的查询数或当前副本延迟。这张桌子总是最新的。
+- `System.numbers`: `number(UInt64)` ，其中几乎包含所有从零开始的自然数。您可以使用此表进行测试，或者如果需要进行蛮力搜索，也可以使用此表。对该表的读取不是并行的。 
+- `System.numbers_mt`: `number(UInt64)` , 与'system.numbers'相同，但读取是并行的。可以按任何顺序返回数字。用于测试。
+- `System.one`:  `dummy(UInt8)`: 该表仅有一行数据， 值为0。如果 SELECT query未指定 FROM 子句，则使用此表。这类似于在其他 DBMS 中找到的 DUAL 表。
+- `System.parts`: 包含有关 MergeTree 表各 part 的信息。
+- `System.part_log`: 此表包含关于 MergeTree 族表中data part发生的事件的信息，例如添加或合并数据。
+- `System.processes`: 该系统表用于实现SHOW PROCESSLIST 请求
+- `system.query_log`： 包含有关query执行的信息。对于每个query，您可以看到处理开始时间、处理持续时间、错误消息和其他信息。
+- `System.replicas`: 包含驻留在本地服务器上的 replicated table 的信息和状态。此表可用于监视。该表包含为每个Replicated*表记录的一行信息。
+- `System.settings`: 包含有关当前正在使用的设置的信息。例如，用于执行用来你从 system.settings 表读查询。
+- `System.tables`: 包含服务器知道的每个表的元数据。detached(分离)的表未显示在中system.tables。
+- `system.zookeeper`: 如果没有配置ZooKeeper，则该表不存在 ,允许从配置中定义的 ZooKeeper 集群读取数据。查询必须在WHERE子句中有一个 "path" 条件。这是你想要获取数据的 children 在 ZooKeeper 中的路径。
+- `system.mutations`: 有关 MergeTree 表的mutation及其进度的信息。每个mutation命令由单行表示
+- `System.disks`: 包含有关服务器配置中定义的磁盘的信息。
+- `system.storage_policies`: 包含有关服务器配置中定义的 `storage policy` 和 `volume` 的信息。
 
 ## system.asynchronous_metrics
 
@@ -309,7 +329,7 @@ SELECT * FROM system.metrics LIMIT 10
 
 ## system.part_log
 
-`system.part_log`仅当指定[part_log]()服务器设置时，才创建该表。
+`system.part_log`仅当指定[part_log](server_configuration_parameters.md)服务器设置时，才创建该表。
 
 此表包含关于 `MergeTree` 族表中`data part`发生的事件的信息，例如添加或合并数据。
 
@@ -342,7 +362,7 @@ SELECT * FROM system.metrics LIMIT 10
 
 ## system.processes
 
-该系统表用于实现`SHOW PROCESSLIST``query`。
+该系统表用于实现`SHOW PROCESSLIST` `query`。
 
 列：
 
@@ -449,7 +469,7 @@ SELECT * FROM system.metrics LIMIT 10
 
 ## system.replicas
 
-包含驻留在本地服务器上的 `replicated table` 的信息和状态。此表可用于监视。该表包含每个`Replicated*`表的一行。
+包含驻留在本地服务器上的 `replicated table` 的信息和状态。此表可用于监视。该表包含为每个Replicated*表记录的一行信息。
 
 例：
 
