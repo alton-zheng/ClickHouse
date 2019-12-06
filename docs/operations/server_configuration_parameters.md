@@ -500,7 +500,7 @@ SSL 客户端/服务器配置。
 - 此外，如果在输入参数中没有接收到时区，则在处理时间和日期的函数中使用时区。
 
 
-## TCP_PORT
+## tcp_port
 
 ```xml
 <tcp_port>9000</tcp_port>
@@ -533,9 +533,9 @@ SSL 客户端/服务器配置。
 <uncompressed_cache_size>8589934592</uncompressed_cache_size>
 ```
 
-对于`MergeTree`中的`table engine`使用的未压缩数据，缓存大小(以字节为单位)。
+`MergeTree` 使用的未压缩数据，缓存大小(以字节为单位)。
 
-服务器有一个共享缓存。内存按需分配。如果启用了 `use_uncompressed_cache` 选项，则使用该缓存。
+服务器共享缓存。内存按需分配。如果启用了 `use_uncompressed_cache` 选项，则使用该缓存。
 
 未压缩的缓存对于个别情况下的非常短的查询是有利的。
 
