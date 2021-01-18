@@ -44,6 +44,7 @@
     - [`JDBC`](docs/table_engines/integrations/jdbc.md)
     - [`ODBC`](docs/table_engines/integrations/odbc.md)
     - [`HDFS`](docs/table_engines/integrations/hdfs.md)
+ &nbsp;
   - Special
     - [`Distributed`](docs/table_engines/special/distributed.md)
     - [`Dictionary`](docs/table_engines/special/dictionary.md)
